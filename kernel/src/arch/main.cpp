@@ -1,4 +1,5 @@
 #include <dev/uart.hpp>
+#include <log.hpp>
 
 // Set the base revision to 2, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
@@ -69,10 +70,11 @@ extern "C" __no_return__ void kmain()
 {
     // Verify booted correctly and received all requests
     verify_boot();
-
+    
     // Enable serial output
     dev::UART::init();
-    dev::UART::write("hello world");    
+    dmesgln("hello w%drld", 0);
+    critical_dmesgln("hello w%drld", 0);
     init_ctors();
     
     // Fetch the first framebuffer.

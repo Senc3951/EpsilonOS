@@ -1,7 +1,9 @@
 #include <lib/string.h>
 
-extern "C"
-{
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void *memcpy(void *dest, const void *src, size_t n)
 {
     u8 *pdest = static_cast<u8 *>(dest);
@@ -54,4 +56,7 @@ int memcmp(const void *s1, const void *s2, size_t n)
 
     return 0;
 }
+
+#ifdef __cplusplus
 }
+#endif
