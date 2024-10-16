@@ -1,4 +1,4 @@
-#include <kernel.h>
+#include <dev/uart.hpp>
 
 // Set the base revision to 2, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
@@ -46,22 +46,17 @@ static volatile LIMINE_REQUESTS_END_MARKER;
 extern void (*__init_array[])();
 extern void (*__init_array_end[])();
 
-void __no_return__ hcf() {
-    for (;;)
-        asm ("hlt");
-}
-
 static void verify_boot()
 {
     // Ensure the bootloader actually understands our base revision
     if (LIMINE_BASE_REVISION_SUPPORTED == false)
-        while (1) ;
+        __hnr();
 
     // Ensure got requests
     if (!hhdm_request.response || !bootloader_info_request.response || !memmap_request.response ||
         !kernel_address_request.response || !kernel_file_request.response ||
         !framebuffer_request.response || !smp_request.response)
-        hcf();
+        __hnr();
 }
 
 static void init_ctors()
@@ -72,7 +67,12 @@ static void init_ctors()
 
 extern "C" __no_return__ void kmain()
 {
+    // Verify booted correctly and received all requests
     verify_boot();
+
+    // Enable serial output
+    dev::UART::init();
+    dev::UART::write("hello world");    
     init_ctors();
     
     // Fetch the first framebuffer.
@@ -83,7 +83,6 @@ extern "C" __no_return__ void kmain()
         volatile std::uint32_t *fb_ptr = static_cast<volatile std::uint32_t *>(framebuffer->address);
         fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
     }
-
-    // We're done, just hang...
-    hcf();
+    
+    __hnr();
 }

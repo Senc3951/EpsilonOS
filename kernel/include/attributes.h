@@ -1,10 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
-#include <climits>
-#include <limine.h>
-
 #ifdef __packed__
 #    undef __packed__
 #else
@@ -40,14 +35,3 @@
 #else
 #   define __limine_request__ __attribute__((used, section(".requests")))
 #endif
-
-#define rndup(n, s)    (((n) + (s) - 1) & ~((s) - 1))
-#define rndown(n, s)   ((n) & ~((s) - 1))
-
-extern volatile limine_bootloader_info_request bootloader_info_request;
-extern volatile limine_hhdm_request hhdm_request;
-extern volatile limine_memmap_request memmap_request;
-extern volatile limine_kernel_address_request kernel_address_request;
-extern volatile limine_kernel_file_request kernel_file_request;
-extern volatile limine_framebuffer_request framebuffer_request;
-extern volatile limine_smp_request smp_request;
