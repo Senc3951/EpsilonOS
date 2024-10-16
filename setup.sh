@@ -1,0 +1,1 @@
+make limine && make setup
