@@ -42,93 +42,44 @@ static volatile LIMINE_REQUESTS_START_MARKER;
 __attribute__((used, section(".requests_end_marker")))
 static volatile LIMINE_REQUESTS_END_MARKER;
 
+// Global constructors
+extern void (*__init_array[])();
+extern void (*__init_array_end[])();
+
+void __no_return__ hcf() {
+    for (;;)
+        asm ("hlt");
+}
+
 static void verify_boot()
 {
     // Ensure the bootloader actually understands our base revision
     if (LIMINE_BASE_REVISION_SUPPORTED == false)
         while (1) ;
-}
-extern "C" {
 
-void *memcpy(void *dest, const void *src, std::size_t n) {
-    std::uint8_t *pdest = static_cast<std::uint8_t *>(dest);
-    const std::uint8_t *psrc = static_cast<const std::uint8_t *>(src);
-
-    for (std::size_t i = 0; i < n; i++) {
-        pdest[i] = psrc[i];
-    }
-
-    return dest;
+    // Ensure got requests
+    if (!hhdm_request.response || !bootloader_info_request.response || !memmap_request.response ||
+        !kernel_address_request.response || !kernel_file_request.response ||
+        !framebuffer_request.response || !smp_request.response)
+        hcf();
 }
 
-void *memset(void *s, int c, std::size_t n) {
-    std::uint8_t *p = static_cast<std::uint8_t *>(s);
-
-    for (std::size_t i = 0; i < n; i++) {
-        p[i] = static_cast<uint8_t>(c);
-    }
-
-    return s;
-}
-
-void *memmove(void *dest, const void *src, std::size_t n) {
-    std::uint8_t *pdest = static_cast<std::uint8_t *>(dest);
-    const std::uint8_t *psrc = static_cast<const std::uint8_t *>(src);
-
-    if (src > dest) {
-        for (std::size_t i = 0; i < n; i++) {
-            pdest[i] = psrc[i];
-        }
-    } else if (src < dest) {
-        for (std::size_t i = n; i > 0; i--) {
-            pdest[i-1] = psrc[i-1];
-        }
-    }
-
-    return dest;
-}
-
-int memcmp(const void *s1, const void *s2, std::size_t n) {
-    const std::uint8_t *p1 = static_cast<const std::uint8_t *>(s1);
-    const std::uint8_t *p2 = static_cast<const std::uint8_t *>(s2);
-
-    for (std::size_t i = 0; i < n; i++) {
-        if (p1[i] != p2[i]) {
-            return p1[i] < p2[i] ? -1 : 1;
-        }
-    }
-
-    return 0;
-}
-
-}
-
-// Halt and catch fire function.
-namespace {
-
-void __no_return__ hcf() {
-    for (;;) {
-#if defined (__x86_64__)
-        asm ("hlt");
-#elif defined (__aarch64__) || defined (__riscv)
-        asm ("wfi");
-#elif defined (__loongarch64)
-        asm ("idle 0");
-#endif
-    }
-}
-
+static void init_ctors()
+{
+    for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++)
+        __init_array[i]();
 }
 
 extern "C" __no_return__ void kmain()
 {
     verify_boot();
+    init_ctors();
     
     // Fetch the first framebuffer.
     limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
     // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-    for (std::size_t i = 0; i < 100; i++) {
+    for (std::size_t i = 0; i < 500; i++) {
         volatile std::uint32_t *fb_ptr = static_cast<volatile std::uint32_t *>(framebuffer->address);
         fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
     }
