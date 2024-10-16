@@ -7,7 +7,6 @@
 *.lo
 *.o
 *.obj
-*.a
 
 # Precompiled Headers
 *.gch
@@ -48,7 +47,7 @@
 *.log
 
 # Directories
-.idea/
+.vscode/
 .git/
 output/
 iso/
