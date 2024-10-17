@@ -13,6 +13,10 @@ override LINKER_FILE := linker.ld
 TOTAL_FILE_COUNT := $(words $(OBJ))
 FILE_COUNTER := 0
 
+ifeq ($(DEBUG), true)
+	CFLAGS += -DSERIAL_OUT -fsanitize=undefined
+endif
+
 AFLAGS += -Wall -i$(INC_DIR)
 CFLAGS += -I$(INC_DIR) -Ifreestnd-c-hdrs/$(KARCH)/include -Wall -Wextra \
 	-nostdinc -ffreestanding -fno-stack-protector -fno-stack-check -fno-lto -fno-PIC \

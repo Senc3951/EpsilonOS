@@ -6,7 +6,7 @@
 
 namespace kernel
 {
-    void __no_return__ __never_inline__ __panic(const char *file, const char *function, const char *fmt, ...);
+    void __no_sanitize__ __no_return__ __never_inline__ __panic(const char *file, const char *function, const char *fmt, ...);
     #define panic(...)                                      \
         do {                                                \
             __panic(__FILE__, __FUNCTION__, __VA_ARGS__);   \

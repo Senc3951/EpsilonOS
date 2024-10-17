@@ -6,6 +6,12 @@
 #    define __packed__ __attribute__((packed))
 #endif
 
+#ifdef __no_sanitize__
+#   undef __no_sanitize__
+#else
+#   define __no_sanitize__ __attribute__((no_sanitize_coverage))
+#endif
+
 #ifdef __no_return__
 #    undef __no_return__
 #else

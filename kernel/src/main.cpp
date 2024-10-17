@@ -69,7 +69,7 @@ static void init_ctors()
         __init_array[i]();
 }
 
-extern "C" __no_return__ void kmain()
+extern "C" __no_sanitize__ __no_return__ void kmain()
 {
     // Verify booted correctly and received all requests
     verify_boot();
@@ -78,7 +78,7 @@ extern "C" __no_return__ void kmain()
     dev::UART::init();
     CPU cpu;
     cpu.setup();
-
+    
     dmesgln("hello w%drld %f", 0, (f64)12.4593);
     critical_dmesgln("hello w%drld", 0);
     init_ctors();

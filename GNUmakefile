@@ -24,7 +24,7 @@ $(OUTPUT_OS): kernel
 
 kernel:
 	@clear
-	@$(MAKE) -C $(KERNEL_DIR) build OUTPUT_KERNEL=$(abspath $(OUTPUT_KERNEL))
+	@$(MAKE) -C $(KERNEL_DIR) build OUTPUT_KERNEL=$(abspath $(OUTPUT_KERNEL)) DEBUG=$(DEBUG)
 
 setup:
 	mkdir -p $(OUTPUT_DIR)

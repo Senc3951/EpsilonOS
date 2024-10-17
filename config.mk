@@ -17,7 +17,7 @@ QFLAGS=-M q35 -cpu max -m 128M -rtc base=localtime -smp $(CORES) -net none -seri
 	-cdrom $(OUTPUT_OS)
 
 ifeq ($(DEBUG), true)
-	CFLAGS += -ggdb -D SERIAL_OUT
+	CFLAGS += -ggdb
 	AFLAGS += -g
 	LFLAGS += -g
 endif
