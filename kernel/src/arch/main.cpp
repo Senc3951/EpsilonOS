@@ -1,6 +1,13 @@
 #include <dev/uart.hpp>
+#include <arch/cpu.hpp>
 #include <log.hpp>
 
+// Global constructors
+extern void (*__init_array[])();
+extern void (*__init_array_end[])();
+
+namespace kernel
+{
 // Set the base revision to 2, this is recommended as this is the latest
 // base revision described by the Limine boot protocol specification.
 // See specification for further info.
@@ -43,26 +50,22 @@ static volatile LIMINE_REQUESTS_START_MARKER;
 __attribute__((used, section(".requests_end_marker")))
 static volatile LIMINE_REQUESTS_END_MARKER;
 
-// Global constructors
-extern void (*__init_array[])();
-extern void (*__init_array_end[])();
-
 static void verify_boot()
 {
     // Ensure the bootloader actually understands our base revision
     if (LIMINE_BASE_REVISION_SUPPORTED == false)
-        __hnr();
+        CPU::hnr();
 
     // Ensure got requests
     if (!hhdm_request.response || !bootloader_info_request.response || !memmap_request.response ||
         !kernel_address_request.response || !kernel_file_request.response ||
         !framebuffer_request.response || !smp_request.response)
-        __hnr();
+        CPU::hnr();
 }
 
 static void init_ctors()
 {
-    for (std::size_t i = 0; &__init_array[i] != __init_array_end; i++)
+    for (size_t i = 0; &__init_array[i] != __init_array_end; i++)
         __init_array[i]();
 }
 
@@ -73,7 +76,10 @@ extern "C" __no_return__ void kmain()
     
     // Enable serial output
     dev::UART::init();
-    dmesgln("hello w%drld", 0);
+    CPU cpu;
+    cpu.setup();
+
+    dmesgln("hello w%drld %f", 0, (f64)12.4593);
     critical_dmesgln("hello w%drld", 0);
     init_ctors();
     
@@ -81,10 +87,11 @@ extern "C" __no_return__ void kmain()
     limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
     // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-    for (std::size_t i = 0; i < 500; i++) {
-        volatile std::uint32_t *fb_ptr = static_cast<volatile std::uint32_t *>(framebuffer->address);
+    for (size_t i = 0; i < 500; i++) {
+        volatile uint32_t *fb_ptr = static_cast<volatile uint32_t *>(framebuffer->address);
         fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
     }
     
-    __hnr();
+    CPU::hnr();
+}
 }

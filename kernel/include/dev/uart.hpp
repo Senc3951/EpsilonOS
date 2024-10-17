@@ -2,7 +2,7 @@
 
 #include <kernel.hpp>
 
-namespace dev
+namespace kernel::dev
 {
     class UART
     {

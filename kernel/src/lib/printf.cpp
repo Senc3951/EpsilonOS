@@ -119,7 +119,7 @@
 #include <dev/uart.hpp>
 void _putchar(char c)
 {
-    dev::UART::write(c);
+  kernel::dev::UART::write(c);
 }
 
 // output function type

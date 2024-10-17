@@ -1,12 +1,11 @@
 #include <dev/uart.hpp>
 #include <io/io.hpp>
 
+namespace kernel::dev
+{
 using namespace io;
 
-namespace dev
-{
 constexpr u64 PORT = 0x3F8;
-
 bool UART::m_initialized = false;
 
 void UART::init()

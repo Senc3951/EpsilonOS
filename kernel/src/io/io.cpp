@@ -1,6 +1,6 @@
 #include <io/io.hpp>
 
-namespace io
+namespace kernel::io
 {
 void out8(const uint16_t port, const uint8_t value)
 {

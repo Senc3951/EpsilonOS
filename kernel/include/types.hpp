@@ -1,17 +1,20 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
-#include <climits>
+#include <limits.h>
+#include <stdint.h>
+#include <stddef.h>
 
-using u8 = std::uint8_t;
-using u16 = std::uint16_t;
-using u32 = std::uint32_t;
-using u64 = std::uint64_t;
-using s8 = std::int8_t;
-using s16 = std::int16_t;
-using s32 = std::int32_t;
-using s64 = std::int64_t;
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
+using s8 = int8_t;
+using s16 = int16_t;
+using s32 = int32_t;
+using s64 = int64_t;
+using ssize_t = long int;
+using f32 = float;
+using f64 = double;
 
 constexpr u64 round_up(const u64 num, const size_t size)
 {

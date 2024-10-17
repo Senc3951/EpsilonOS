@@ -1,6 +1,8 @@
 #include <log.hpp>
 #include <lib/printf.hpp>
 
+namespace kernel
+{
 void _log_message(const char *file, const bool critical, const char *fmt, ...)
 {
     va_list arg;
@@ -15,4 +17,5 @@ void _log_message(const char *file, const bool critical, const char *fmt, ...)
     printf("\033[39m\n");
     
     va_end(arg);
+}
 }

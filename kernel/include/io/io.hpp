@@ -2,7 +2,7 @@
 
 #include <kernel.hpp>
 
-namespace io
+namespace kernel::io
 {
     void out8(const uint16_t port, const uint8_t value);
     void out16(const uint16_t port, const uint16_t value);
