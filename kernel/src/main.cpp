@@ -76,6 +76,8 @@ extern "C" __no_sanitize__ __no_return__ void kmain()
     
     // Enable serial output
     dev::UART::init();
+    
+    // Enable cpu features
     CPU cpu;
     cpu.setup();
     

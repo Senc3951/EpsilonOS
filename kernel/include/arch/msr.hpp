@@ -4,6 +4,8 @@
 
 namespace kernel
 {
+    constexpr u32 MSR_IA32_PAT = 0x277;
+
     class MSR
     {
     private:

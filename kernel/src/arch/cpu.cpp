@@ -2,7 +2,6 @@
 #include <arch/register.hpp>
 #include <arch/cpuid.hpp>
 #include <arch/msr.hpp>
-#include <log.hpp>
 
 namespace kernel
 {
@@ -10,10 +9,10 @@ namespace kernel
     {
         // Streaming SIMD Extensions
         CPUID cpuid(1);
-        if (cpuid.edx() & CpuidFlags::EDXSSE)
-            sse_enable();
-        else    // SSE is required
-            panic("sse not supported");
+        assert((cpuid.edx() & CpuidFlags::EDXSSE) && "sse not supported");
+        
+        // Enable SSE
+        sse_enable();
         
         // Page Global Enable
         if (cpuid.edx() & CpuidFlags::EDXPGE)
@@ -36,6 +35,21 @@ namespace kernel
                 Register::write(XCR0, Register::read(XCR0) | Feature::XCR0X87 | Feature::XCR0SSE | Feature::XCR0AVX);
         }
         
+        // Page Attribute Table
+        if (cpuid.edx() & CpuidFlags::EDXPAT)
+        {
+            MSR msr(MSR_IA32_PAT);
+
+            /* Set PAT entry 4 to WC. This allows us to
+            use this mode by only setting the bit in the PTE
+            and leaving all other bits in the upper levels unset,
+            which maps to setting bit 3 of the index, resulting in the index value 0 or 4. */
+
+            u64 pat = msr.get() & ~(0x7ULL << 32);  // Clear entry 4
+            pat |= (0x1ULL << 32);                  // Set WC in entry 4
+            msr.set(pat);
+        }
+        
         // Supervisor Memory Access Protection
         cpuid = CPUID(7);
         if (cpuid.ebx() & CpuidFlags::EBXSMAP)
@@ -51,7 +65,7 @@ namespace kernel
         if (cpuid.ecx() & CpuidFlags::ECXUMIP)
             // Set CR4.UMIP
             Register::write(CR4, Register::read(CR4) | Feature::CR4UMIP);
-        
+
         // TODO: syscall
     }
     
