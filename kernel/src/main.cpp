@@ -1,5 +1,6 @@
 #include <dev/uart.hpp>
 #include <arch/cpu.hpp>
+#include <mem/pmm.hpp>
 #include <log.hpp>
 
 // Global constructors
@@ -69,6 +70,8 @@ static void init_ctors()
         __init_array[i]();
 }
 
+using namespace memory;
+
 extern "C" __no_sanitize__ __no_return__ void kmain()
 {
     // Verify booted correctly and received all requests
@@ -80,20 +83,13 @@ extern "C" __no_sanitize__ __no_return__ void kmain()
     // Enable cpu features
     CPU cpu;
     cpu.setup();
-    
-    dmesgln("hello w%drld %f", 0, (f64)12.4593);
-    critical_dmesgln("hello w%drld", 0);
-    init_ctors();
-    
-    // Fetch the first framebuffer.
-    limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
-    // Note: we assume the framebuffer model is RGB with 32-bit pixels.
-    for (size_t i = 0; i < 500; i++) {
-        volatile uint32_t *fb_ptr = static_cast<volatile uint32_t *>(framebuffer->address);
-        fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
-    }
+    // Initialize memory (physical)
+    PhysicalMemoryManager::instance().init();
     
+    init_ctors();
+
+    dmesgln("finished");
     CPU::hnr();
 }
 }
