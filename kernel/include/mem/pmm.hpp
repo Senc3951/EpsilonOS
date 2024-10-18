@@ -1,7 +1,6 @@
 #pragma once
 
 #include <lib/bitmap.hpp>
-#include <mem/address.hpp>
 
 namespace kernel::memory
 {
@@ -23,8 +22,9 @@ namespace kernel::memory
         
         void init();
 
-        PhysicalAddress allocate_frame();
-        void release_frame(PhysicalAddress& addr);
+        void *allocate_frame();
+        void release_frame(uintptr_t addr);       
+        void release_frame(void *addr);
 
         template <typename Func>
         static limine_memmap_entry *find_physical_entry(Func func, bool throw_if_not_found = true);

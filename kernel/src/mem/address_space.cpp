@@ -1,4 +1,5 @@
 #include <mem/address_space.hpp>
+#include <mem/address_range.hpp>
 #include <mem/pmm.hpp>
 #include <arch/register.hpp>
 #include <log.hpp>
@@ -8,37 +9,37 @@ namespace kernel::memory
 AddressSpace::AddressSpace()
 {
     // Allocate memory for the table
-    PhysicalAddress pml4_frame = PhysicalMemoryManager::instance().allocate_frame();
-    if (pml4_frame.is_null())
+    void *pml4_frame = PhysicalMemoryManager::instance().allocate_frame();
+    if (!pml4_frame)
         panic("failed allocating memory for pml4");
     
     // Reset the table
-    m_pml4 = reinterpret_cast<PageTable *>(tohh(pml4_frame.addr()));
+    m_pml4 = reinterpret_cast<PageTable *>(tohh(pml4_frame));
     m_pml4->reset();
     
     // Map lower 4GiB
-    for (uintptr_t phys_addr = 0; phys_addr < 4 * GiB; phys_addr += PAGE_SIZE)
-        map(tohh(phys_addr), PhysicalAddress(phys_addr), PagingFlags::Writable);
+    AddressRange _4gib_range(0, 4 * GiB);
+    for (auto phys_addr : _4gib_range)
+        map(tohh(phys_addr), phys_addr, PagingFlags::Writable);
     
     // Map the kernel
-    u64 kernel_size = kernel_file_request.response->kernel_file->size;
+    AddressRange kernel_range(0, kernel_file_request.response->kernel_file->size);
     u64 kernel_phys_start = kernel_address_request.response->physical_base;
     u64 kernel_virt_start = kernel_address_request.response->virtual_base;
-    for (uintptr_t i = 0; i < kernel_size; i += PAGE_SIZE)
-    {
-        uintptr_t phys = kernel_phys_start + i;
-        uintptr_t virt = kernel_virt_start + i;
-        map(virt, PhysicalAddress(phys), PagingFlags::Writable);
-    }
+    for (auto offset : kernel_range)
+        map(kernel_virt_start + offset, kernel_phys_start + offset, PagingFlags::Writable);
     
-    // Map framebuffer
-    limine_memmap_entry *fb_entry = PhysicalMemoryManager::find_physical_entry([](limine_memmap_entry *entry) {
+    // Get framebuffer physical entry
+    limine_memmap_entry *framebuffer_memmap_entry = PhysicalMemoryManager::find_physical_entry([](limine_memmap_entry *entry) {
         return entry->type == LIMINE_MEMMAP_FRAMEBUFFER;
     });
-    u64 fb_start = tohh(fb_entry->base);
-    u64 fb_size = fb_entry->length;
-    for (uintptr_t i = 0; i < fb_size; i += PAGE_SIZE)
-        map(fb_start + i, PhysicalAddress(fromhh(fb_start + i)), PagingFlags::Writable | PagingFlags::ExecuteDisable | WC_CACHE);
+    u64 framebuffer_virt_start = reinterpret_cast<u64>(framebuffer_request.response->framebuffers[0]->address);
+    u64 framebuffer_phys_start = framebuffer_memmap_entry->base;
+    
+    // Map framebuffer
+    AddressRange framebuffer_range(0, framebuffer_memmap_entry->length);
+    for (auto offset : framebuffer_range)
+        map(framebuffer_virt_start + offset, framebuffer_phys_start + offset, PagingFlags::Writable | PagingFlags::ExecuteDisable | WC_CACHE);
 }
 
 void AddressSpace::load()
@@ -48,17 +49,58 @@ void AddressSpace::load()
     Register::write(CR3, reinterpret_cast<u64>(fromhh(m_pml4)));
 }
 
-void AddressSpace::map(const u64 virt, const PhysicalAddress& phys, const u64 unfixed_flags)
+void AddressSpace::flush_tlb(const u64 virt)
+{
+    asm volatile("invlpg (%0)" ::"r" (virt) : "memory");
+}
+
+void AddressSpace::map(const u64 virt, const u64 phys, const u64 unfixed_flags)
 {
     bool is_pat;
     u64 flags = fix_flags(unfixed_flags, is_pat);
     
     // Get the page table entry for the specified virtual address
     PageTableEntry *entry = virt2pte(virt, flags, true);
+
+    // If remapping to a different frame, release the current one
+    u64 frame = pte2frame(entry);
+    if (frame && frame != phys)
+        PhysicalMemoryManager::instance().release_frame(frame);
     
     if (is_pat) // Re-enable pat at the page table level
         flags |= PagingFlags::PAT;
     entry->set(phys, flags);
+}
+
+void AddressSpace::unmap(const u64 virt)
+{
+    // Get the page table entry for the specified virtual address
+    PageTableEntry *entry = virt2pte(virt, 0, false);
+
+    // Get the frame mapped to the entry
+    u64 frame = pte2frame(entry);
+    if (!frame) // Entry not mapped
+    {
+        critical_dmesgln("Attempted to unmap a non-existing page %p", virt);
+        return;
+    }
+    
+    // Reset the entry & release the physical memory
+    entry->set_raw(0);
+    PhysicalMemoryManager::instance().release_frame(frame);
+}
+
+void *AddressSpace::virt2phys(const u64 virt)
+{
+    // Get the page table entry for the specified virtual address
+    PageTableEntry *entry = virt2pte(virt, 0, false);
+
+    // Get the frame mapped to the entry
+    u64 frame = pte2frame(entry);
+    if (!frame) // Entry not mapped
+        return nullptr;
+        
+    return reinterpret_cast<void *>(frame | (virt & (PAGE_SIZE - 1)));
 }
 
 u64 AddressSpace::fix_flags(const u64 flags, bool& is_pat)
@@ -96,5 +138,13 @@ PageTableEntry *AddressSpace::virt2pte(const u64 virt, const u64 flags, const bo
     
     // Get the page table entry
     return pt->at(pt_index(virt));
+}
+
+u64 AddressSpace::pte2frame(const PageTableEntry *entry)
+{
+    if (!entry || !entry->is_present())
+        return 0;
+    
+    return entry->get_frame();
 }
 }

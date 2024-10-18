@@ -48,24 +48,29 @@ void PhysicalMemoryManager::init()
     critical_dmesgln("Physical Memory bitmap at %p (%llu bytes)\n", m_bitmap.addr(), m_bitmap.bsize());
 }
 
-PhysicalAddress PhysicalMemoryManager::allocate_frame()
+void *PhysicalMemoryManager::allocate_frame()
 {
     // Find an available bit
     s64 num = m_bitmap.find_set();
     if (num < 0)
-        return PhysicalAddress(0);
+        return nullptr;
     
-    return PhysicalAddress(num * FRAME_SIZE);
+    return reinterpret_cast<void *>(num * FRAME_SIZE);
 }
 
-void PhysicalMemoryManager::release_frame(PhysicalAddress& addr)
+void PhysicalMemoryManager::release_frame(uintptr_t addr)
 {
     // Check that the address is aligned
-    if (!addr.is_frame_aligned())
-        panic("unaligned physical address %p", addr.addr());
-
+    if (!is_aligned(addr, FRAME_SIZE))
+        panic("unaligned physical address %p", addr);
+    
     // Free the bit
-    m_bitmap.clear(addr.addr() / FRAME_SIZE, true);
+    m_bitmap.clear(addr / FRAME_SIZE, true);
+}
+
+void PhysicalMemoryManager::release_frame(void *addr)
+{
+    release_frame(reinterpret_cast<uintptr_t>(addr));
 }
 
 void PhysicalMemoryManager::free_region(limine_memmap_entry *entry)

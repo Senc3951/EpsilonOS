@@ -22,6 +22,8 @@ namespace kernel
     constexpr u64 MiB = 1024 * KiB;
     constexpr u64 GiB = 1024 * MiB;
 
+    constexpr size_t PAGE_SIZE = 4096;
+
     extern volatile limine_bootloader_info_request bootloader_info_request;
     extern volatile limine_hhdm_request hhdm_request;
     extern volatile limine_memmap_request memmap_request;

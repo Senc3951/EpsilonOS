@@ -1,11 +1,9 @@
 #pragma once
 
 #include <kernel.hpp>
-#include <mem/address.hpp>
 
 namespace kernel::memory
 {
-    constexpr size_t PAGE_SIZE = 4096;
     constexpr size_t ENTRIES_PER_TABLE = 512;
 
     enum PagingFlags
@@ -30,12 +28,13 @@ namespace kernel::memory
         constexpr bool is_null() const { return m_raw == 0; }
         constexpr bool is_present() const { return m_raw & PagingFlags::Present; }
         
-        PhysicalAddress get_frame() const { return PhysicalAddress(m_raw & ~FLAGS_MASK); }
+        u64 get_frame() const { return m_raw & ~FLAGS_MASK; }
         
-        void set(const PhysicalAddress& frame, const u64 flags)
+        constexpr void set_raw(const u64 raw) { m_raw = raw; }
+        void set(const u64 frame, const u64 flags)
         {
             m_raw = flags & FLAGS_MASK;
-            m_raw |= frame.addr() & ~FLAGS_MASK;
+            m_raw |= frame & ~FLAGS_MASK;
         }
     };
     

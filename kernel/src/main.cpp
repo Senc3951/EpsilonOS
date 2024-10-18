@@ -84,12 +84,12 @@ extern "C" __no_sanitize__ __no_return__ void kmain()
     // Enable cpu features
     CPU cpu;
     cpu.setup();
-
+    
     // Initialize memory (physical, virtual)
     PhysicalMemoryManager::instance().init();
     AddressSpace as = AddressSpace();
     as.load();
-
+    
     init_ctors();
 
     limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
