@@ -29,4 +29,16 @@ namespace kernel
     extern volatile limine_kernel_file_request kernel_file_request;
     extern volatile limine_framebuffer_request framebuffer_request;
     extern volatile limine_smp_request smp_request;
+
+    template <typename T>
+    constexpr __always_inline__ T tohh(T ptr)
+    {
+        return reinterpret_cast<T>(reinterpret_cast<uintptr_t>(ptr) + hhdm_request.response->offset);
+    }
+    
+    template <typename T>
+    constexpr __always_inline__ T fromhh(T ptr)
+    {
+        return reinterpret_cast<T>(reinterpret_cast<uintptr_t>(ptr) - hhdm_request.response->offset);
+    }
 }

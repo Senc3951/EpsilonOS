@@ -29,7 +29,7 @@ namespace kernel
         
         constexpr void set_bit(const u64 i, const u64 j)
         {
-            m_addr[i] |= (1ULL << j);
+            m_addr[i] |= (1ull << j);
         }
     public:
         Bitmap() : m_addr(nullptr) { }
@@ -112,6 +112,6 @@ namespace kernel
         assert(get_bit(i, j) == 1 || !check);
 
         // Mark the bit as unused
-        m_addr[i] &= ~(1ULL << j);
+        m_addr[i] &= ~(1ull << j);
     }
 }

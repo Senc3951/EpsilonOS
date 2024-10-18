@@ -1,6 +1,7 @@
 #include <dev/uart.hpp>
 #include <arch/cpu.hpp>
 #include <mem/pmm.hpp>
+#include <mem/address_space.hpp>
 #include <log.hpp>
 
 // Global constructors
@@ -84,10 +85,20 @@ extern "C" __no_sanitize__ __no_return__ void kmain()
     CPU cpu;
     cpu.setup();
 
-    // Initialize memory (physical)
+    // Initialize memory (physical, virtual)
     PhysicalMemoryManager::instance().init();
-    
+    AddressSpace as = AddressSpace();
+    as.load();
+
     init_ctors();
+
+    limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
+
+    // Note: we assume the framebuffer model is RGB with 32-bit pixels.
+    for (size_t i = 0; i < 100; i++) {
+        volatile u32 *fb_ptr = (volatile u32 *)framebuffer->address;
+        fb_ptr[i * (framebuffer->pitch / 4) + i] = 0xffffff;
+    }
 
     dmesgln("finished");
     CPU::hnr();

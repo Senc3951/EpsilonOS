@@ -1,7 +1,7 @@
 #pragma once
 
 #include <lib/bitmap.hpp>
-#include <mem/physical_address.hpp>
+#include <mem/address.hpp>
 
 namespace kernel::memory
 {
@@ -25,9 +25,28 @@ namespace kernel::memory
 
         PhysicalAddress allocate_frame();
         void release_frame(PhysicalAddress& addr);
+
+        template <typename Func>
+        static limine_memmap_entry *find_physical_entry(Func func, bool throw_if_not_found = true);
         
         // Delete the copy constructor & assignment operator
         PhysicalMemoryManager(const PhysicalMemoryManager&) = delete;
         PhysicalMemoryManager& operator=(const PhysicalMemoryManager&) = delete;
     };
+
+    template <typename Func>
+    limine_memmap_entry *PhysicalMemoryManager::find_physical_entry(Func func, bool throw_if_not_found)
+    {
+        for (uint64_t i = 0; i < memmap_request.response->entry_count; i++)
+        {
+            limine_memmap_entry *entry = memmap_request.response->entries[i];
+            if (func(entry))
+                return entry;
+        }
+        
+        if (throw_if_not_found)
+            panic("failed finding physical entry with lambda function at %p", func);
+        
+        return nullptr;
+    }
 }

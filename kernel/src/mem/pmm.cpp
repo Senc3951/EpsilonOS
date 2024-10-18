@@ -25,24 +25,15 @@ void PhysicalMemoryManager::init()
     u64 bsize = round_up(round_down(m_end, FRAME_SIZE) / FRAME_SIZE, 64) / 8;
 
     // Find a place to store the bitmap
-    for (uint64_t i = 0; i < memmap_request.response->entry_count; i++)
-    {
-        limine_memmap_entry *entry = memmap_request.response->entries[i];
-        if (entry->type == LIMINE_MEMMAP_USABLE && entry->length >= bsize)
-        {
-            // Initialize the bitmap
-            m_bitmap.init(reinterpret_cast<u64 *>(entry->base + hhdm_request.response->offset), UINT64_MAX, bsize);
-            
-            // Update the entry
-            entry->length -= bsize;
-            entry->base += bsize;
-            break;
-        }
-    }
-
-    // Verify found a place to store the bitmap
-    assert(!m_bitmap.is_null() && "failed to find a place to store the bitmap");
-
+    limine_memmap_entry *bitmap_entry = find_physical_entry([&bsize](limine_memmap_entry *entry) {
+        return entry->type == LIMINE_MEMMAP_USABLE && entry->length >= bsize;
+    });
+    
+    // Initialize the bitmap & update the entry
+    m_bitmap.init(reinterpret_cast<u64 *>(tohh(bitmap_entry->base)), UINT64_MAX, bsize);
+    bitmap_entry->length -= bsize;
+    bitmap_entry->base += bsize;
+    
     // Mark all memory as used
     memset(reinterpret_cast<void *>(m_bitmap.addr()), 0xFF, m_bitmap.bsize());
     
