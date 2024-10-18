@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mem/page_table.hpp>
+#include <mem/address_range.hpp>
 
 namespace kernel::memory
 {
@@ -21,12 +22,18 @@ namespace kernel::memory
     public:
         AddressSpace();
 
+        void init_kernel();
         void load();
+        
         void flush_tlb(const u64 virt);
 
         void map(const u64 virt, const u64 phys, const u64 flags);
+        void map(AddressRange& range, const u64 flags);
         void unmap(const u64 virt);
+        void unmap(AddressRange &range);
 
         void *virt2phys(const u64 virt);
     };
+
+    extern AddressSpace kernel_address_space;
 }

@@ -12,7 +12,7 @@ namespace kernel::memory
         static PhysicalMemoryManager m_instance;
 
         Bitmap<u64> m_bitmap;
-        uintptr_t m_start = UINTPTR_MAX, m_end = 0;
+        uintptr_t m_end = 0;
         
         PhysicalMemoryManager() { }
 

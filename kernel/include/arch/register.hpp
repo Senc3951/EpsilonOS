@@ -12,6 +12,7 @@ namespace kernel
         CR4OSFXSR       = 1 << 9,
         CR4OSXMMEXCPT   = 1 << 10,
         CR4UMIP         = 1 << 11,
+        CR4FSGS         = 1 << 16,
         CR4OSXSAVE      = 1 << 18,
         CR4SMEP         = 1 << 20,
         CR4SMAP         = 1 << 21,

@@ -6,6 +6,7 @@ namespace kernel
 {
     enum CpuidFlags
     {
+        EBXFSGS     = 1 << 0,
         EBXSMEP     = 1 << 7,
         EBXSMAP     = 1 << 20,
         ECXUMIP     = 1 << 2,

@@ -4,8 +4,11 @@
 
 namespace kernel
 {
-    constexpr u32 MSR_IA32_PAT = 0x277;
-
+    constexpr u32 MSR_IA32_PAT      = 0x277;
+    constexpr u32 MSR_IA32_FS       = 0xC0000100;
+    constexpr u32 MSR_IA32_GS       = 0xC0000101;
+    constexpr u32 MSR_IA32_KERNELGS = 0xC0000102;    
+    
     class MSR
     {
     private:
@@ -13,7 +16,7 @@ namespace kernel
     public:
         MSR(const u32 msr) : m_msr(msr) { }
 
-        u64 get() const
+        u64 read() const
         {
             u32 low, high;
             asm volatile("rdmsr"
@@ -22,7 +25,7 @@ namespace kernel
             return ((u64)high << 32) | low;
         }
 
-        void set(const u64 value) const
+        void write(const u64 value) const
         {
             u32 low = static_cast<u32>(value);
             u32 high = static_cast<u32>(value >> 32);

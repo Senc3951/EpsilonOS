@@ -5,7 +5,7 @@
 
 namespace kernel
 {
-    void CPU::setup()
+    void CPU::init()
     {
         // Streaming SIMD Extensions
         CPUID cpuid(1);
@@ -45,9 +45,9 @@ namespace kernel
             and leaving all other bits in the upper levels unset,
             which maps to setting bit 3 of the index, resulting in the index value 0 or 4. */
 
-            u64 pat = msr.get() & ~(0x7ULL << 32);  // Clear entry 4
+            u64 pat = msr.read() & ~(0x7ULL << 32);  // Clear entry 4
             pat |= (0x1ULL << 32);                  // Set WC in entry 4
-            msr.set(pat);
+            msr.write(pat);
         }
         
         // Supervisor Memory Access Protection
@@ -65,18 +65,34 @@ namespace kernel
         if (cpuid.ecx() & CpuidFlags::ECXUMIP)
             // Set CR4.UMIP
             Register::write(CR4, Register::read(CR4) | Feature::CR4UMIP);
+        
+        // FS / GS
+        assert((cpuid.ebx() & CpuidFlags::EBXFSGS) && "%%fs & %%fs is inaccessible");
+        // Set CR4.FSGSBASE
+        Register::write(CR4, Register::read(CR4) | Feature::CR4FSGS);
+        
+        static PerCPU pc;
+        pc.self = (uintptr_t)&pc;
+        pc.cpu = this;
+        MSR msr(MSR_IA32_GS);
+        msr.write((uintptr_t)&pc);
 
         // TODO: syscall
     }
     
-    void CPU::sse_enable()
+    void CPU::flush_tlb(const u64 virt) const
     {
-        // Clear CR0.EM, Set CR0.MP
-        u64 cr0 = Register::read(CR0);
-        cr0 &= ~Feature::CR0EM;
-        Register::write(CR0, cr0 | Feature::CR0MP);
-        
-        // Set CR4.OSFXSR, CR4.OSXMMEXCPT
-        Register::write(CR4, Register::read(CR4) | Feature::CR4OSFXSR | Feature::CR4OSXMMEXCPT);
+        asm volatile("invlpg (%0)" ::"r" (virt) : "memory");
     }
+
+    void CPU::sse_enable()
+        {
+            // Clear CR0.EM, Set CR0.MP
+            u64 cr0 = Register::read(CR0);
+            cr0 &= ~Feature::CR0EM;
+            Register::write(CR0, cr0 | Feature::CR0MP);
+            
+            // Set CR4.OSFXSR, CR4.OSXMMEXCPT
+            Register::write(CR4, Register::read(CR4) | Feature::CR4OSFXSR | Feature::CR4OSXMMEXCPT);
+        }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <kernel.hpp>
+#include <arch/percpu.hpp>
 
 namespace kernel
 {
@@ -9,7 +10,9 @@ namespace kernel
     private:
         void sse_enable();
     public:
-        void setup();
+        void init();
+
+        void flush_tlb(const u64 virt) const;
 
         static void enable_interrupts() { asm volatile("sti" ::: "memory"); }
         static void disable_interrupts() { asm volatile("cli" ::: "memory"); }
@@ -21,6 +24,6 @@ namespace kernel
                 halt();
         }
         
-        static CPU *current() { return nullptr; }
+        static __always_inline__ CPU *current() { return current_cpu()->cpu; }
     };
 }
