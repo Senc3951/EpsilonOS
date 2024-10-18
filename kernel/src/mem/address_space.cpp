@@ -108,6 +108,54 @@ namespace kernel::memory
             unmap(virt + offset);
     }
 
+    void *AddressSpace::allocate(const size_t page_count, const u64 flags)
+    {
+        if (!page_count)
+            return nullptr;
+
+        // Allocate a frame for the first page
+        void *first_frame_phys = PhysicalMemoryManager::instance().allocate_frame();
+        if (!first_frame_phys)
+            return nullptr;
+
+        // Map the first page
+        u64 first_frame = reinterpret_cast<u64>(tohh(first_frame_phys));
+        map(first_frame, reinterpret_cast<u64>(first_frame_phys), flags);
+        flush_tlb(first_frame);
+
+        // Map the other pages
+        for (size_t i = 1; i < page_count; i++)
+        {
+            void *frame = PhysicalMemoryManager::instance().allocate_frame();
+            if (!frame)
+            {
+                // Unmap all allocated pages
+                release(reinterpret_cast<void *>(first_frame), i);            
+                return NULL;
+            }
+                
+            // Map the other pages after the first page and flush the tlb
+            u64 vaddr = first_frame + i * PAGE_SIZE;
+            map(vaddr, reinterpret_cast<u64>(frame), flags);
+            flush_tlb(vaddr);
+        }
+        
+        return reinterpret_cast<void *>(first_frame);   
+    }
+
+    void AddressSpace::release(void *ptr, const size_t page_count)
+    {
+        u64 vbase = round_down(reinterpret_cast<u64>(ptr), PAGE_SIZE);
+        for (size_t i = 0; i < page_count; i++)
+        {
+            u64 virt = vbase + i * PAGE_SIZE;
+
+            // Unmap & flush each page
+            unmap(virt);
+            flush_tlb(virt);
+        }
+    }
+
     void *AddressSpace::virt2phys(const u64 virt)
     {
         // Get the page table entry for the specified virtual address

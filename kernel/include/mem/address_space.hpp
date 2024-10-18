@@ -24,14 +24,16 @@ namespace kernel::memory
 
         void init_kernel();
         void load();
-        
-        void flush_tlb(const u64 virt);
 
         void map(const u64 virt, const u64 phys, const u64 flags);
         void map(AddressRange& range, const u64 flags);
         void unmap(const u64 virt);
         void unmap(AddressRange &range);
 
+        void *allocate(const size_t page_count, const u64 flags);
+        void release(void *ptr, const size_t page_count);
+
+        void flush_tlb(const u64 virt);
         void *virt2phys(const u64 virt);
     };
 

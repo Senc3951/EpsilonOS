@@ -44,3 +44,10 @@ namespace kernel
         return reinterpret_cast<T>(reinterpret_cast<uintptr_t>(ptr) - hhdm_request.response->offset);
     }
 }
+
+void *operator new(size_t size);
+void *operator new[](size_t size);
+void operator delete(void *p);
+void operator delete(void *p, size_t);
+void operator delete[](void *p);
+void operator delete[](void *p, size_t);

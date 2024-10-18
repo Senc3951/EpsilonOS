@@ -91,6 +91,11 @@ namespace kernel
         // Initialize virtual memory manager
         kernel_address_space.init_kernel();
         
+        int *test = new int[3];
+        test[0]=-1;
+        test[1]=35;
+        dmesgln("%p %d %d",test,test[0],test[1]);
+        
         init_ctors();
 
         dmesgln("finished");
