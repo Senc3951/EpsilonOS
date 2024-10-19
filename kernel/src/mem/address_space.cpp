@@ -21,18 +21,16 @@ namespace kernel::memory
         m_pml4 = reinterpret_cast<PageTable *>(tohh(pml4_frame));
         m_pml4->reset();
 
-        // Map lower 4GiB
+        // Map lower 4GiB as Writable & Not Executable
         AddressRange _4gib_range(tohh(static_cast<u64>(0)), 0, 4 * GiB);
         map(_4gib_range, PagingFlags::Writable | PagingFlags::ExecuteDisable);
 
-        // Protect NULL to be not writable & not excutable
+        // Map NULL to be Not Writable & Not Executable
         map(tohh(static_cast<u64>(0)), 0, PagingFlags::ExecuteDisable);
 
-        // Map the kernel
+        // Convert the kernel exports to addresses
         u64 kernel_phys_start = kernel_address_request.response->physical_base;
         u64 kernel_virt_start = kernel_address_request.response->virtual_base;
-
-        // Convert the kernel exports to addresses
         u64 requests_start = reinterpret_cast<u64>(&_requests_start);
         u64 requests_end = reinterpret_cast<u64>(&_requests_end);
         u64 text_start = reinterpret_cast<u64>(&_text_start);
@@ -44,6 +42,7 @@ namespace kernel::memory
         u64 data_start = reinterpret_cast<u64>(&_data_start);
         u64 data_end = reinterpret_cast<u64>(&_data_end);
 
+        // Map the Kernel
         // Map requests region as Writable & Not Executable
         AddressRange kernel_requests_range(requests_start, kernel_phys_start + requests_start - kernel_virt_start, requests_end - requests_start);
         map(kernel_requests_range, PagingFlags::Writable | PagingFlags::ExecuteDisable);
@@ -69,7 +68,7 @@ namespace kernel::memory
             return entry->type == LIMINE_MEMMAP_FRAMEBUFFER;
         });
         
-        // Map framebuffer
+        // Map the framebuffer as Writable, Not Executable & WC cached
         AddressRange framebuffer_range(reinterpret_cast<u64>(framebuffer_request.response->framebuffers[0]->address),
             framebuffer_memmap_entry->base, framebuffer_memmap_entry->length);
         map(framebuffer_range, PagingFlags::Writable | PagingFlags::ExecuteDisable | WC_CACHE);
