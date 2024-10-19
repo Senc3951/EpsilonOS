@@ -23,7 +23,9 @@ SECTIONS
     /* that is the beginning of the region. */
     . = 0xffffffff80000000;
 
+
     /* Define a section to contain the Limine requests and assign it to its own PHDR */
+    _requests_start = .;
     .requests : {
         KEEP(*(.requests_start_marker))
         KEEP(*(.requests))
@@ -33,16 +35,28 @@ SECTIONS
     /* Move to the next memory page for .text */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
+    _requests_end = .;
+    _text_start = .;
+
     .text : {
         *(.text .text.*)
     } :text
 
     /* Move to the next memory page for .rodata */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
+    
+    _text_end = .;
+    _rodata_start = .;
 
     .rodata : {
         *(.rodata .rodata.*)
     } :rodata
+
+    /* Move to the next memory page for .data */
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+
+    _rodata_end = .;
+    _ctor_start = .;
 
     /* C++ is a language that allows for global constructors. In order to obtain the */
     /* address of the ".init_array" section we need to define a symbol for it. */
@@ -54,6 +68,9 @@ SECTIONS
 
     /* Move to the next memory page for .data */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
+
+    _ctor_end = .;
+    _data_start = .;
 
     .data : {
         *(.data .data.*)
@@ -67,7 +84,9 @@ SECTIONS
         *(.bss .bss.*)
         *(COMMON)
     } :data
-
+    
+    _data_end = .;
+    
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
         *(.eh_frame*)

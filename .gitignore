@@ -49,6 +49,7 @@
 # Directories
 .vscode/
 .git/
+.idea/
 output/
 iso/
 limine/

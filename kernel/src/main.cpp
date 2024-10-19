@@ -70,7 +70,10 @@ namespace kernel
     static void init_ctors()
     {
         for (size_t i = 0; &__init_array[i] != __init_array_end; i++)
+        {
+            dmesgln("Calling ctor at %p", __init_array[i]);
             __init_array[i]();
+        }
     }
 
     extern "C" __no_sanitize__ __no_return__ void kmain()
@@ -89,13 +92,9 @@ namespace kernel
         PhysicalMemoryManager::instance().init();
         
         // Initialize virtual memory manager
+        // Heap will be initialized when calling the first malloc
         kernel_address_space.init_kernel();
-        
-        int *test = new int[3];
-        test[0]=-1;
-        test[1]=35;
-        dmesgln("%p %d %d",test,test[0],test[1]);
-        
+
         init_ctors();
 
         dmesgln("finished");

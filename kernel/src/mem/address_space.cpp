@@ -10,7 +10,7 @@ namespace kernel::memory
 
     AddressSpace::AddressSpace() { }
     
-    void AddressSpace::init_kernel()
+    void  AddressSpace::init_kernel()
     {
         // Allocate memory for the table
         void *pml4_frame = PhysicalMemoryManager::instance().allocate_frame();
@@ -20,17 +20,50 @@ namespace kernel::memory
         // Reset the table
         m_pml4 = reinterpret_cast<PageTable *>(tohh(pml4_frame));
         m_pml4->reset();
-        
+
         // Map lower 4GiB
         AddressRange _4gib_range(tohh(static_cast<u64>(0)), 0, 4 * GiB);
-        map(_4gib_range, PagingFlags::Writable);
-        
+        map(_4gib_range, PagingFlags::Writable | PagingFlags::ExecuteDisable);
+
+        // Protect NULL to be not writable & not excutable
+        map(tohh(static_cast<u64>(0)), 0, PagingFlags::ExecuteDisable);
+
         // Map the kernel
-        AddressRange kernel_range(kernel_address_request.response->virtual_base,
-            kernel_address_request.response->physical_base,
-            kernel_file_request.response->kernel_file->size);
-        map(kernel_range, PagingFlags::Writable);
-        
+        u64 kernel_phys_start = kernel_address_request.response->physical_base;
+        u64 kernel_virt_start = kernel_address_request.response->virtual_base;
+
+        // Convert the kernel exports to addresses
+        u64 requests_start = reinterpret_cast<u64>(&_requests_start);
+        u64 requests_end = reinterpret_cast<u64>(&_requests_end);
+        u64 text_start = reinterpret_cast<u64>(&_text_start);
+        u64 text_end = reinterpret_cast<u64>(&_text_end);
+        u64 rodata_start = reinterpret_cast<u64>(&_rodata_start);
+        u64 rodata_end = reinterpret_cast<u64>(&_rodata_end);
+        u64 ctor_start = reinterpret_cast<u64>(&_ctor_start);
+        u64 ctor_end = reinterpret_cast<u64>(&_ctor_end);
+        u64 data_start = reinterpret_cast<u64>(&_data_start);
+        u64 data_end = reinterpret_cast<u64>(&_data_end);
+
+        // Map requests region as Writable & Not Executable
+        AddressRange kernel_requests_range(requests_start, kernel_phys_start + requests_start - kernel_virt_start, requests_end - requests_start);
+        map(kernel_requests_range, PagingFlags::Writable | PagingFlags::ExecuteDisable);
+
+        // Map text region as Not Writable & Executable
+        AddressRange kernel_text_range(text_start, kernel_phys_start + text_start - kernel_virt_start, text_end - text_start);
+        map(kernel_text_range, 0);
+
+        // Map rodata region as Not Writable & Not Executable
+        AddressRange kernel_rodata_range(rodata_start, kernel_phys_start + rodata_start - kernel_virt_start, rodata_end - rodata_start);
+        map(kernel_rodata_range, PagingFlags::ExecuteDisable);
+
+        // Map constructors region as Not Writable & Executable
+        AddressRange kernel_ctor_region(ctor_start, kernel_phys_start + ctor_start - kernel_virt_start, ctor_end - ctor_start);
+        map(kernel_ctor_region, 0);
+
+        // Map data region as Writable & Not Executable
+        AddressRange kernel_data_range(data_start, kernel_phys_start + data_start - kernel_virt_start, data_end - data_start);
+        map(kernel_data_range, PagingFlags::Writable | PagingFlags::ExecuteDisable);
+
         // Get framebuffer physical entry
         limine_memmap_entry *framebuffer_memmap_entry = PhysicalMemoryManager::find_physical_entry([](limine_memmap_entry *entry) {
             return entry->type == LIMINE_MEMMAP_FRAMEBUFFER;
@@ -59,8 +92,8 @@ namespace kernel::memory
 
     void AddressSpace::map(const u64 virt, const u64 phys, const u64 unfixed_flags)
     {
-        bool is_pat;
-        u64 flags = fix_flags(unfixed_flags, is_pat);
+        u64 pte_flags;
+        u64 flags = fix_flags(unfixed_flags, pte_flags);
         
         // Get the page table entry for the specified virtual address
         PageTableEntry *entry = virt2pte(virt, flags, true);
@@ -69,10 +102,9 @@ namespace kernel::memory
         u64 frame = pte2frame(entry);
         if (frame && frame != phys)
             PhysicalMemoryManager::instance().release_frame(frame);
-        
-        if (is_pat) // Re-enable pat at the page table level
-            flags |= PagingFlags::PAT;
-        entry->set(phys, flags);
+
+        // Set page table entry with its special flags
+        entry->set(phys, pte_flags);
     }
 
     void AddressSpace::map(AddressRange& range, const u64 flags)
@@ -169,20 +201,21 @@ namespace kernel::memory
         return reinterpret_cast<void *>(frame | (virt & (PAGE_SIZE - 1)));
     }
 
-    u64 AddressSpace::fix_flags(const u64 flags, bool& is_pat)
+    u64 AddressSpace::fix_flags(const u64 flags, u64& pte_flags)
     {
         // User does not have to specify present as when mapping, it has to be present
-        u64 new_flags = flags | PagingFlags::Present;
-        if (new_flags & PagingFlags::PAT)
-        {
-            // Disable pat because for entries > page table it means huge pages
-            new_flags &= ~(PagingFlags::PAT);
-            is_pat = true;
-        }
-        else
-            is_pat = false;
+        // pte_flags are the original flags with Present, returned flags are page directory flags, meaning
+        // they don't contain pat & execution disable.
+        u64 pd_flags = pte_flags = flags | PagingFlags::Present;
 
-        return new_flags;
+        if (pd_flags & PagingFlags::PAT)
+            // Disable pat because for entries > page table it means huge pages
+            pd_flags &= ~(PagingFlags::PAT);
+        if (pd_flags & PagingFlags::ExecuteDisable)
+            // Disable xd because it can cause undefined behaviour (only enable xd on page table level)
+            pd_flags &= ~(PagingFlags::ExecuteDisable);
+
+        return pd_flags;
     }
 
     PageTableEntry *AddressSpace::virt2pte(const u64 virt, const u64 flags, const bool allocate)
