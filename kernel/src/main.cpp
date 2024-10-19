@@ -15,8 +15,7 @@ namespace kernel
     // Set the base revision to 2, this is recommended as this is the latest
     // base revision described by the Limine boot protocol specification.
     // See specification for further info.
-    __attribute__((used, section(".requests")))
-    static volatile LIMINE_BASE_REVISION(2);
+    static __limine_request__ volatile LIMINE_BASE_REVISION(2);
 
     __limine_request__ volatile limine_hhdm_request hhdm_request = {
         .id = LIMINE_HHDM_REQUEST,
