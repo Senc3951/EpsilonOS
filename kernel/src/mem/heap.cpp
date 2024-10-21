@@ -905,12 +905,14 @@ namespace kernel::memory
 
     void *liballoc_alloc(size_t pages)
     {
-        return kernel_address_space.allocate(pages, PagingFlags::Writable);
+        return kernel_address_space.allocate(pages, PagingFlags::Writable).as<void *>();
     }
 
     int liballoc_free(void *ptr, size_t pages)
     {
-        kernel_address_space.release(ptr, pages);
+        Address addr(ptr);
+        kernel_address_space.release(addr, pages);
+        
         return 0;
     }
 }

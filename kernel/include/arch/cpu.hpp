@@ -1,6 +1,5 @@
 #pragma once
 
-#include <kernel.hpp>
 #include <arch/msr.hpp>
 
 namespace kernel
@@ -30,10 +29,6 @@ namespace kernel
                 halt();
         }
         
-        static __always_inline__ CPU *current()
-        {
-            MSR msr(MSR_IA32_GS);
-            return (CPU*)msr.read();
-        }
+        static __always_inline__ CPU *current() { return reinterpret_cast<CPU *>(MSR::read(MSR_IA32_GS)); }
     };
 }

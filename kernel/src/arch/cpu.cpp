@@ -1,7 +1,6 @@
 #include <arch/cpu.hpp>
 #include <arch/register.hpp>
 #include <arch/cpuid.hpp>
-#include <arch/msr.hpp>
 
 namespace kernel
 {
@@ -78,9 +77,8 @@ namespace kernel
         
         // Get an instance of cpu & write it in the gs segment
         CPU *cpu = get_next_cpu();
-        MSR msr(MSR_IA32_GS);
-        msr.write((uintptr_t)cpu);
-        
+        MSR::write(MSR_IA32_GS, reinterpret_cast<uintptr_t>(cpu));
+                
         return cpu;
     }
     

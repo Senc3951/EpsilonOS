@@ -8,8 +8,8 @@ namespace kernel::memory
     {
         PageTableEntry *entry = at(index);
         if (entry->is_present())    // Entry is valid, return pointer to next table
-            return reinterpret_cast<PageTable *>(tohh(entry->get_frame()));
-
+            return entry->get_frame().tohh().as<PageTable *>();
+        
         // Entry is not present but we should not allocate a new one
         if (!allocate)
             return nullptr;
@@ -21,16 +21,16 @@ namespace kernel::memory
     PageTable *PageTable::create_table(PageTableEntry *entry, const u64 flags)
     {
         // Allocate a new page table
-        void *table_address = PhysicalMemoryManager::instance().allocate_frame();
-        if (!table_address)
+        Address table_address = PhysicalMemoryManager::instance().allocate_frame();
+        if (table_address.is_null())
             panic("failed allocating page table for entry at %p", entry);
 
         // Reset the table
-        PageTable *page_table = reinterpret_cast<PageTable *>(tohh(table_address));
+        PageTable *page_table = table_address.tohh().as<PageTable *>();
         page_table->reset();
-
+        
         // Map the table to the table entry
-        entry->set(reinterpret_cast<uintptr_t>(table_address), flags);
+        entry->set(table_address, flags);
         return page_table;
     }
     

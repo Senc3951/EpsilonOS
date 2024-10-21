@@ -1,6 +1,7 @@
 #pragma once
 
 #include <kernel.hpp>
+#include <mem/address.hpp>
 
 namespace kernel::memory
 {
@@ -25,16 +26,15 @@ namespace kernel::memory
         u64 m_raw;
         #define FLAGS_MASK 0xFFF0000000000FFF        
     public:
-        constexpr bool is_null() const { return m_raw == 0; }
         constexpr bool is_present() const { return m_raw & PagingFlags::Present; }
-        
-        u64 get_frame() const { return m_raw & ~FLAGS_MASK; }
-        
         constexpr void set_raw(const u64 raw) { m_raw = raw; }
-        void set(const u64 frame, const u64 flags)
+
+        inline Address get_frame() const { return Address(m_raw & ~FLAGS_MASK); }
+        
+        inline void set(const Address& frame, const u64 flags)
         {
             m_raw = flags & FLAGS_MASK;
-            m_raw |= frame & ~FLAGS_MASK;
+            m_raw |= frame.addr() & ~FLAGS_MASK;
         }
     };
     

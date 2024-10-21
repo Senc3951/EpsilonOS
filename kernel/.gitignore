@@ -1,2 +1,4 @@
 freestnd-c-hdrs/
 obj/
+src/cc-runtime.c
+include/limine.h

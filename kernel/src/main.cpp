@@ -92,7 +92,8 @@ namespace kernel
         // Initialize virtual memory manager
         // Heap will be initialized when calling the first malloc
         kernel_address_space.init_kernel();
-
+        
+        // Initialize constructors after memory has been initialized
         init_ctors();
 
         dmesgln("finished");

@@ -10,24 +10,24 @@ namespace kernel::memory
 
     AddressSpace::AddressSpace() { }
     
-    void  AddressSpace::init_kernel()
+    void AddressSpace::init_kernel()
     {
         // Allocate memory for the table
-        void *pml4_frame = PhysicalMemoryManager::instance().allocate_frame();
-        if (!pml4_frame)
+        m_phys_pml4 = PhysicalMemoryManager::instance().allocate_frame();
+        if (m_phys_pml4.is_null())
             panic("failed allocating memory for pml4");
         
         // Reset the table
-        m_pml4 = reinterpret_cast<PageTable *>(tohh(pml4_frame));
+        m_pml4 = m_phys_pml4.tohh().as<PageTable *>();
         m_pml4->reset();
 
         // Map lower 4GiB as Writable & Not Executable
-        AddressRange _4gib_range(tohh(static_cast<u64>(0)), 0, 4 * GiB);
+        AddressRange _4gib_range(Address::tohh<u64, u64>(0), 0, 4 * GiB);
         map(_4gib_range, PagingFlags::Writable | PagingFlags::ExecuteDisable);
-
+        
         // Map NULL to be Not Writable & Not Executable
-        map(tohh(static_cast<u64>(0)), 0, PagingFlags::ExecuteDisable);
-
+        map(Address::tohh<u64, u64>(0), 0, PagingFlags::ExecuteDisable);
+        
         // Convert the kernel exports to addresses
         u64 kernel_phys_start = kernel_address_request.response->physical_base;
         u64 kernel_virt_start = kernel_address_request.response->virtual_base;
@@ -41,7 +41,7 @@ namespace kernel::memory
         u64 ctor_end = reinterpret_cast<u64>(&_ctor_end);
         u64 data_start = reinterpret_cast<u64>(&_data_start);
         u64 data_end = reinterpret_cast<u64>(&_data_end);
-
+        
         // Map the Kernel
         // Map requests region as Writable & Not Executable
         AddressRange kernel_requests_range(requests_start, kernel_phys_start + requests_start - kernel_virt_start, requests_end - requests_start);
@@ -73,17 +73,17 @@ namespace kernel::memory
             framebuffer_memmap_entry->base, framebuffer_memmap_entry->length);
         map(framebuffer_range, PagingFlags::Writable | PagingFlags::ExecuteDisable | WC_CACHE);
     
-        critical_dmesgln("Kernel PML4 at %p", fromhh(m_pml4));
+        critical_dmesgln("Kernel PML4 at %p", m_phys_pml4.addr());
         load();
     }
 
     void AddressSpace::load()
     {
         // CR3 expects the physical address of pml4
-        assert(!m_pml4.is_null() && "null pml4");
-        Register::write(CR3, m_pml4.fromhh().addr());
+        assert(!m_phys_pml4.is_null() && "null pml4");
+        Register::write(CR3, m_phys_pml4.addr());
     }
-
+    
     void AddressSpace::flush_tlb(const Address& virt)
     {
         CPU::current()->flush_tlb(virt.addr());
@@ -98,8 +98,8 @@ namespace kernel::memory
         PageTableEntry *entry = virt2pte(virt, flags, true);
 
         // If remapping to a different frame, release the current one
-        u64 frame = pte2frame(entry);
-        if (frame && frame != phys)
+        Address frame = pte2frame(entry);
+        if (!frame.is_null() && frame != phys)
             PhysicalMemoryManager::instance().release_frame(frame);
 
         // Set page table entry with its special flags
@@ -108,10 +108,15 @@ namespace kernel::memory
 
     void AddressSpace::map(AddressRange& range, const u64 flags)
     {
-        u64 virt = range.virt_start();
-        u64 phys = range.phys_start();
+        uintptr_t virt = range.virt_start();
+        uintptr_t phys = range.phys_start();
         for (auto offset : range)
-            map(virt + offset, phys + offset, flags);
+        {
+            Address vaddr(virt + offset);
+            Address paddr(phys + offset);
+            
+            map(vaddr, paddr, flags);
+        }
     }
     
     void AddressSpace::unmap(const Address& virt)
@@ -120,8 +125,8 @@ namespace kernel::memory
         PageTableEntry *entry = virt2pte(virt, 0, false);
 
         // Get the frame mapped to the entry
-        u64 frame = pte2frame(entry);
-        if (!frame) // Entry not mapped
+        Address frame = pte2frame(entry);
+        if (frame.is_null()) // Entry not mapped
         {
             critical_dmesgln("Attempted to unmap a non-existing page %p", virt);
             return;
@@ -132,22 +137,25 @@ namespace kernel::memory
         PhysicalMemoryManager::instance().release_frame(frame);
     }
 
-    void AddressSpace::unmap(AddressRange &range)
+    void AddressSpace::unmap(AddressRange& range)
     {
-        u64 virt = range.virt_start();
+        uintptr_t virt = range.virt_start();
         for (auto offset : range)
-            unmap(virt + offset);
+        {
+            Address vaddr(virt + offset);
+            unmap(vaddr);
+        }
     }
 
     Address AddressSpace::allocate(const size_t page_count, const u64 flags)
     {
         if (!page_count)
-            return nullptr;
+            return Address();
 
         // Allocate a frame for the first page
         Address first_frame_phys = PhysicalMemoryManager::instance().allocate_frame();
         if (first_frame_phys.is_null())
-            return Address(0);
+            return Address();
         
         // Map the first page
         Address first_frame = first_frame_phys.tohh();
@@ -162,7 +170,7 @@ namespace kernel::memory
             {
                 // Unmap all allocated pages
                 release(first_frame, i);            
-                return NULL;
+                return Address();
             }
                 
             // Map the other pages after the first page and flush the tlb
@@ -194,11 +202,11 @@ namespace kernel::memory
         PageTableEntry *entry = virt2pte(vaddr, 0, false);
 
         // Get the frame mapped to the entry
-        u64 frame = pte2frame(entry);
-        if (!frame) // Entry not mapped
-            return Address(0);
+        Address frame = pte2frame(entry);
+        if (frame.is_null()) // Entry not mapped
+            return Address();
             
-        return Address(frame | (vaddr & (PAGE_SIZE - 1)));
+        return Address(frame.addr() | (vaddr & (PAGE_SIZE - 1)));
     }
 
     u64 AddressSpace::fix_flags(const u64 flags, u64& pte_flags)
@@ -218,31 +226,32 @@ namespace kernel::memory
         return pd_flags;
     }
 
-    PageTableEntry *AddressSpace::virt2pte(const u64 virt, const u64 flags, const bool allocate)
+    PageTableEntry *AddressSpace::virt2pte(const Address& virt, const u64 flags, const bool allocate)
     {
         // Get the page directory pointer
-        PageTable *pdp = m_pml4->get_next_table(pml4_index(virt), flags, allocate);
+        uintptr_t vaddr = virt.addr();
+        PageTable *pdp = m_pml4->get_next_table(pml4_index(vaddr), flags, allocate);
         if (!pdp)
             return nullptr;
 
         // Get the page directory
-        PageTable *pd = pdp->get_next_table(pdp_index(virt), flags, allocate);
+        PageTable *pd = pdp->get_next_table(pdp_index(vaddr), flags, allocate);
         if (!pd)
             return nullptr;
         
         // Get the page table
-        PageTable *pt = pd->get_next_table(pd_index(virt), flags, allocate);
+        PageTable *pt = pd->get_next_table(pd_index(vaddr), flags, allocate);
         if (!pt)
             return nullptr;
         
         // Get the page table entry
-        return pt->at(pt_index(virt));
+        return pt->at(pt_index(vaddr));
     }
 
-    u64 AddressSpace::pte2frame(const PageTableEntry *entry)
+    Address AddressSpace::pte2frame(const PageTableEntry *entry)
     {
         if (!entry || !entry->is_present())
-            return 0;
+            return Address();
         
         return entry->get_frame();
     }

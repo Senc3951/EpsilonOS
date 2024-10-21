@@ -15,22 +15,25 @@ namespace kernel
         u32 m_msr;
     public:
         MSR(const u32 msr) : m_msr(msr) { }
+        
+        inline u64 read() const { return read(m_msr); }
+        inline void write(const u64 value) const { write(m_msr, value); }
 
-        u64 read() const
+        static inline u64 read(const u32 msr)
         {
             u32 low, high;
             asm volatile("rdmsr"
                         : "=a"(low), "=d"(high)
-                        : "c"(m_msr));
-            return ((u64)high << 32) | low;
+                        : "c"(msr));
+            return ((u64)high << 32) | low;   
         }
 
-        void write(const u64 value) const
+        static void write(const u32 msr, const u64 value)
         {
             u32 low = static_cast<u32>(value);
             u32 high = static_cast<u32>(value >> 32);
             
-            asm volatile("wrmsr" ::"a"(low), "d"(high), "c"(m_msr));
+            asm volatile("wrmsr" ::"a"(low), "d"(high), "c"(msr));
         }
     };
 }

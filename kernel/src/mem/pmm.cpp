@@ -31,7 +31,7 @@ namespace kernel::memory
         
         // Initialize the bitmap & update the entry
         Address bitmap_address(bitmap_entry->base);
-        m_bitmap.init(bitmap_address.tohh().addr_as<u64 *>(), UINT64_MAX, bsize);
+        m_bitmap.init(bitmap_address.tohh().as<u64 *>(), UINT64_MAX, bsize);
         bitmap_entry->length -= bsize;
         bitmap_entry->base += bsize;
         
@@ -54,7 +54,7 @@ namespace kernel::memory
         // Find an available bit
         s64 num = m_bitmap.find_set();
         if (num < 0)
-            return Address(0);
+            return Address();
         
         return Address(num * FRAME_SIZE);
     }
