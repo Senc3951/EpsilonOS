@@ -83,9 +83,8 @@ namespace kernel
         // Enable serial output
         dev::UART::init();
         
-        // Enable cpu features
-        CPU cpu;
-        cpu.init();
+        // Enable cpu features & initialize bsp's cpu struct
+        CPU::init();
         
         // Initialize physical memory manager
         PhysicalMemoryManager::instance().init();

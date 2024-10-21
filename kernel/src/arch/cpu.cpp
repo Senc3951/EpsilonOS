@@ -5,7 +5,10 @@
 
 namespace kernel
 {
-    void CPU::init()
+    static CPU cpus[MAX_CPU];
+    u32 CPU::m_id = 0;
+
+    CPU *CPU::init()
     {
         // Streaming SIMD Extensions
         CPUID cpuid(1);
@@ -71,13 +74,14 @@ namespace kernel
         // Set CR4.FSGSBASE
         Register::write(CR4, Register::read(CR4) | Feature::CR4FSGS);
         
-        static PerCPU pc;
-        pc.self = (uintptr_t)&pc;
-        pc.cpu = this;
-        MSR msr(MSR_IA32_GS);
-        msr.write((uintptr_t)&pc);
-
         // TODO: syscall
+        
+        // Get an instance of cpu & write it in the gs segment
+        CPU *cpu = get_next_cpu();
+        MSR msr(MSR_IA32_GS);
+        msr.write((uintptr_t)cpu);
+        
+        return cpu;
     }
     
     void CPU::flush_tlb(const u64 virt) const
@@ -86,13 +90,19 @@ namespace kernel
     }
 
     void CPU::sse_enable()
-        {
-            // Clear CR0.EM, Set CR0.MP
-            u64 cr0 = Register::read(CR0);
-            cr0 &= ~Feature::CR0EM;
-            Register::write(CR0, cr0 | Feature::CR0MP);
-            
-            // Set CR4.OSFXSR, CR4.OSXMMEXCPT
-            Register::write(CR4, Register::read(CR4) | Feature::CR4OSFXSR | Feature::CR4OSXMMEXCPT);
-        }
+    {
+        // Clear CR0.EM, Set CR0.MP
+        u64 cr0 = Register::read(CR0);
+        cr0 &= ~Feature::CR0EM;
+        Register::write(CR0, cr0 | Feature::CR0MP);
+        
+        // Set CR4.OSFXSR, CR4.OSXMMEXCPT
+        Register::write(CR4, Register::read(CR4) | Feature::CR4OSFXSR | Feature::CR4OSXMMEXCPT);
+    }
+
+    CPU *CPU::get_next_cpu()
+    {
+        assert(m_id < MAX_CPU);
+        return &cpus[m_id++];
+    }
 }

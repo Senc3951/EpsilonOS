@@ -1,17 +1,23 @@
 #pragma once
 
 #include <kernel.hpp>
-#include <arch/percpu.hpp>
+#include <arch/msr.hpp>
 
 namespace kernel
 {
+    constexpr u32 MAX_CPU = 64;
+
     class CPU
     {
     private:
-        void sse_enable();
-    public:
-        void init();
+        u32 m_apicid;
+        static u32 m_id;
 
+        static void sse_enable();
+        static CPU *get_next_cpu();
+    public:
+        static CPU *init(); /* Returns a new instance of a CPU */
+        
         void flush_tlb(const u64 virt) const;
 
         static void enable_interrupts() { asm volatile("sti" ::: "memory"); }
@@ -24,6 +30,10 @@ namespace kernel
                 halt();
         }
         
-        static __always_inline__ CPU *current() { return current_cpu()->cpu; }
+        static __always_inline__ CPU *current()
+        {
+            MSR msr(MSR_IA32_GS);
+            return (CPU*)msr.read();
+        }
     };
 }
