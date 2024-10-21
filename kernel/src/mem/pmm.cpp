@@ -8,6 +8,8 @@ namespace kernel::memory
 
     void PhysicalMemoryManager::init()
     {
+        u64 mem_end = 0;
+     
         // Find highest available address
         for (uint64_t i = 0; i < memmap_request.response->entry_count; i++)
         {
@@ -15,12 +17,12 @@ namespace kernel::memory
             dmesgln("Physical Region at %p-%p (%u)", entry->base, entry->base + entry->length, entry->type);
         
             // Calculate the start & end of available physical memory
-            if (entry->type == LIMINE_MEMMAP_USABLE && entry->base + entry->length > m_end)
-                m_end = entry->base + entry->length;
+            if (entry->type == LIMINE_MEMMAP_USABLE && entry->base + entry->length > mem_end)
+                mem_end = entry->base + entry->length;
         }
         
         // Calculate the size of the bitmap (depends on bitmap type)
-        u64 bsize = round_up(round_down(m_end, FRAME_SIZE) / FRAME_SIZE, 64) / 8;
+        u64 bsize = round_up(round_down(mem_end, FRAME_SIZE) / FRAME_SIZE, 64) / 8;
 
         // Find a place to store the bitmap
         limine_memmap_entry *bitmap_entry = find_physical_entry([&bsize](limine_memmap_entry *entry) {
@@ -28,7 +30,8 @@ namespace kernel::memory
         });
         
         // Initialize the bitmap & update the entry
-        m_bitmap.init(reinterpret_cast<u64 *>(tohh(bitmap_entry->base)), UINT64_MAX, bsize);
+        Address bitmap_address(bitmap_entry->base);
+        m_bitmap.init(bitmap_address.tohh().addr_as<u64 *>(), UINT64_MAX, bsize);
         bitmap_entry->length -= bsize;
         bitmap_entry->base += bsize;
         
@@ -46,29 +49,24 @@ namespace kernel::memory
         critical_dmesgln("Physical Memory bitmap at %p (%llu bytes)", m_bitmap.addr(), m_bitmap.bsize());
     }
 
-    void *PhysicalMemoryManager::allocate_frame()
+    Address PhysicalMemoryManager::allocate_frame()
     {
         // Find an available bit
         s64 num = m_bitmap.find_set();
         if (num < 0)
-            return nullptr;
+            return Address(0);
         
-        return reinterpret_cast<void *>(num * FRAME_SIZE);
+        return Address(num * FRAME_SIZE);
     }
 
-    void PhysicalMemoryManager::release_frame(uintptr_t addr)
+    void PhysicalMemoryManager::release_frame(Address& address)
     {
         // Check that the address is aligned
-        if (!is_aligned(addr, FRAME_SIZE))
-            panic("unaligned physical address %p", addr);
+        if (!address.is_page_aligned())
+            panic("unaligned physical address %p", address.addr());
         
         // Free the bit
-        m_bitmap.clear(addr / FRAME_SIZE, true);
-    }
-
-    void PhysicalMemoryManager::release_frame(void *addr)
-    {
-        release_frame(reinterpret_cast<uintptr_t>(addr));
+        m_bitmap.clear(address.addr() / FRAME_SIZE, true);
     }
 
     void PhysicalMemoryManager::free_region(limine_memmap_entry *entry)

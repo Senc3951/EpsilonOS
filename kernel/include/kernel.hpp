@@ -44,18 +44,6 @@ namespace kernel
     extern "C" void *_rodata_end;
     extern "C" void *_ctor_end;
     extern "C" void *_data_end;
-
-    template <typename T>
-    constexpr __always_inline__ T tohh(T ptr)
-    {
-        return reinterpret_cast<T>(reinterpret_cast<uintptr_t>(ptr) + hhdm_request.response->offset);
-    }
-    
-    template <typename T>
-    constexpr __always_inline__ T fromhh(T ptr)
-    {
-        return reinterpret_cast<T>(reinterpret_cast<uintptr_t>(ptr) - hhdm_request.response->offset);
-    }
 }
 
 void *operator new(size_t size);

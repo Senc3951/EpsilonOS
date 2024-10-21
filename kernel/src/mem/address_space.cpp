@@ -80,16 +80,16 @@ namespace kernel::memory
     void AddressSpace::load()
     {
         // CR3 expects the physical address of pml4
-        assert(m_pml4 && "null pml4");
-        Register::write(CR3, reinterpret_cast<u64>(fromhh(m_pml4)));
+        assert(!m_pml4.is_null() && "null pml4");
+        Register::write(CR3, m_pml4.fromhh().addr());
     }
 
-    void AddressSpace::flush_tlb(const u64 virt)
+    void AddressSpace::flush_tlb(const Address& virt)
     {
-        CPU::current()->flush_tlb(virt);
+        CPU::current()->flush_tlb(virt.addr());
     }
 
-    void AddressSpace::map(const u64 virt, const u64 phys, const u64 unfixed_flags)
+    void AddressSpace::map(const Address& virt, const Address& phys, const u64 unfixed_flags)
     {
         u64 pte_flags;
         u64 flags = fix_flags(unfixed_flags, pte_flags);
@@ -113,8 +113,8 @@ namespace kernel::memory
         for (auto offset : range)
             map(virt + offset, phys + offset, flags);
     }
-
-    void AddressSpace::unmap(const u64 virt)
+    
+    void AddressSpace::unmap(const Address& virt)
     {
         // Get the page table entry for the specified virtual address
         PageTableEntry *entry = virt2pte(virt, 0, false);
@@ -139,65 +139,66 @@ namespace kernel::memory
             unmap(virt + offset);
     }
 
-    void *AddressSpace::allocate(const size_t page_count, const u64 flags)
+    Address AddressSpace::allocate(const size_t page_count, const u64 flags)
     {
         if (!page_count)
             return nullptr;
 
         // Allocate a frame for the first page
-        void *first_frame_phys = PhysicalMemoryManager::instance().allocate_frame();
-        if (!first_frame_phys)
-            return nullptr;
-
+        Address first_frame_phys = PhysicalMemoryManager::instance().allocate_frame();
+        if (first_frame_phys.is_null())
+            return Address(0);
+        
         // Map the first page
-        u64 first_frame = reinterpret_cast<u64>(tohh(first_frame_phys));
-        map(first_frame, reinterpret_cast<u64>(first_frame_phys), flags);
+        Address first_frame = first_frame_phys.tohh();
+        map(first_frame, first_frame_phys, flags);
         flush_tlb(first_frame);
 
         // Map the other pages
         for (size_t i = 1; i < page_count; i++)
         {
-            void *frame = PhysicalMemoryManager::instance().allocate_frame();
-            if (!frame)
+            Address frame = PhysicalMemoryManager::instance().allocate_frame();
+            if (frame.is_null())
             {
                 // Unmap all allocated pages
-                release(reinterpret_cast<void *>(first_frame), i);            
+                release(first_frame, i);            
                 return NULL;
             }
                 
             // Map the other pages after the first page and flush the tlb
-            u64 vaddr = first_frame + i * PAGE_SIZE;
-            map(vaddr, reinterpret_cast<u64>(frame), flags);
+            Address vaddr(first_frame.addr() + i * PAGE_SIZE);
+            map(vaddr, frame, flags);
             flush_tlb(vaddr);
         }
         
-        return reinterpret_cast<void *>(first_frame);   
+        return first_frame;   
     }
 
-    void AddressSpace::release(void *ptr, const size_t page_count)
+    void AddressSpace::release(const Address& virt, const size_t page_count)
     {
-        u64 vbase = round_down(reinterpret_cast<u64>(ptr), PAGE_SIZE);
+        uintptr_t vbase = virt.page_round_down();
         for (size_t i = 0; i < page_count; i++)
         {
-            u64 virt = vbase + i * PAGE_SIZE;
-
+            uintptr_t vaddr = vbase + i * PAGE_SIZE;
+            
             // Unmap & flush each page
-            unmap(virt);
-            flush_tlb(virt);
+            unmap(vaddr);
+            flush_tlb(vaddr);
         }
     }
 
-    void *AddressSpace::virt2phys(const u64 virt)
+    Address AddressSpace::virt2phys(const Address& virt)
     {
         // Get the page table entry for the specified virtual address
-        PageTableEntry *entry = virt2pte(virt, 0, false);
+        uintptr_t vaddr = virt.addr();
+        PageTableEntry *entry = virt2pte(vaddr, 0, false);
 
         // Get the frame mapped to the entry
         u64 frame = pte2frame(entry);
         if (!frame) // Entry not mapped
-            return nullptr;
+            return Address(0);
             
-        return reinterpret_cast<void *>(frame | (virt & (PAGE_SIZE - 1)));
+        return Address(frame | (vaddr & (PAGE_SIZE - 1)));
     }
 
     u64 AddressSpace::fix_flags(const u64 flags, u64& pte_flags)
