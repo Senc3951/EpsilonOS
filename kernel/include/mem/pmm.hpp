@@ -11,14 +11,13 @@ namespace kernel::memory
     {
     private:
         static PhysicalMemoryManager m_instance;
-
         Bitmap<u64> m_bitmap;
         
         PhysicalMemoryManager() { }
 
         void free_region(limine_memmap_entry *entry);
     public:
-        constexpr static PhysicalMemoryManager& instance() { return m_instance; }
+        static constexpr PhysicalMemoryManager& instance() { return m_instance; }
         
         void init();
 

@@ -12,14 +12,9 @@ extern void (*__init_array_end[])();
 
 namespace kernel
 {
-    extern "C" void isr_interrupt_handler(void *)
-    {
-        
-    }
-
     using namespace arch;
     using namespace memory;
-    
+
     // Set the base revision to 2, this is recommended as this is the latest
     // base revision described by the Limine boot protocol specification.
     // See specification for further info.

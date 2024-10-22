@@ -12,7 +12,7 @@ namespace kernel::arch
     constexpr u16 IDT_INTERRUPT_TYPE3 = IDT_PRESENT | IDT_DPL3 | IDT_INTERRUPT;
     constexpr u16 IDT_TRAP_TYPE0 = IDT_PRESENT | IDT_DPL0 | IDT_TRAP;
     constexpr u16 IDT_TRAP_TYPE3 = IDT_PRESENT | IDT_DPL3 | IDT_TRAP;
-
+    
     struct IdtEntry
     {
         uint16_t offset_low;
@@ -24,7 +24,7 @@ namespace kernel::arch
         uint32_t offset_high;
         uint32_t reserved1;
     } __packed__;
-
+    
     static IdtEntry entries[IDT_ENTRIES];
     extern "C" uintptr_t __interrupt_handlers[];
     
