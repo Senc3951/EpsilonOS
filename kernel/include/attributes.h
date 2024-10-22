@@ -6,6 +6,12 @@
 #    define __packed__ __attribute__((packed))
 #endif
 
+#ifdef __aligned__
+#   undef __aligned__
+#else
+#   define __aligned__(n) __attribute__((aligned(n)))
+#endif
+
 #ifdef __no_sanitize__
 #   undef __no_sanitize__
 #else
@@ -34,6 +40,12 @@
 #    undef __never_inline__
 #else
 #    define __never_inline__ __attribute__((noinline))
+#endif
+
+#ifdef __pure_const__
+#   undef __pure_const__
+#else
+#   define __pure_const__ __attribute__((const))
 #endif
 
 #ifdef __limine_request__

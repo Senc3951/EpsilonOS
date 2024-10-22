@@ -1,5 +1,7 @@
 #include <dev/uart.hpp>
 #include <arch/cpu.hpp>
+#include <arch/gdt.hpp>
+#include <arch/idt.hpp>
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
 #include <log.hpp>
@@ -10,6 +12,7 @@ extern void (*__init_array_end[])();
 
 namespace kernel
 {
+    using namespace arch;
     using namespace memory;
     
     // Set the base revision to 2, this is recommended as this is the latest
@@ -85,9 +88,10 @@ namespace kernel
         critical_dmesgln("Kernel loaded using `%s` %s with cmdline `%s`", bootloader_info_request.response->name, bootloader_info_request.response->version,
             kernel_file_request.response->kernel_file->cmdline);
         
-        // Enable cpu features & initialize bsp's cpu struct
-        CPU::init();
+        // Enable cpu features
+        CPU& current_cpu = CPU::init();
         
+        /* Initialize memory */
         // Initialize physical memory manager
         PhysicalMemoryManager::instance().init();
         
@@ -97,6 +101,18 @@ namespace kernel
         
         // Initialize constructors after memory has been initialized
         init_ctors();
+        
+        /* Initialize architecture-related */
+        // Initialize & Load an GDT
+        gdt_init(current_cpu);
+        current_cpu.load_gdt();
+
+        // GDT erases the content of the gs msr, so write the cpu struct after loading a gdt
+        current_cpu.write_self_to_gs();
+                
+        // Initialize & Load an IDT
+        idt_init(current_cpu);
+        current_cpu.load_idt();
         
         dmesgln("finished");
         CPU::hnr();

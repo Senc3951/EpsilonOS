@@ -4,10 +4,13 @@
 
 namespace kernel
 {
+    extern "C" void x64_load_gdt(const uintptr_t gdt, const u64 cs, const u64 ds);
+    extern "C" void x64_load_idt(const uintptr_t idt);
+
     static CPU cpus[MAX_CPU];
     u32 CPU::m_id = 0;
 
-    CPU *CPU::init()
+    CPU& CPU::init()
     {
         // Streaming SIMD Extensions
         CPUID cpuid(1);
@@ -69,22 +72,35 @@ namespace kernel
             Register::write(CR4, Register::read(CR4) | Feature::CR4UMIP);
         
         // FS / GS
-        assert((cpuid.ebx() & CpuidFlags::EBXFSGS) && "%%fs & %%fs is inaccessible");
+        assert((cpuid.ebx() & CpuidFlags::EBXFSGS) && "%%fs & %%gs are inaccessible");
         // Set CR4.FSGSBASE
         Register::write(CR4, Register::read(CR4) | Feature::CR4FSGS);
         
         // TODO: syscall
-        
-        // Get an instance of cpu & write it in the gs segment
-        CPU *cpu = get_next_cpu();
-        MSR::write(MSR_IA32_GS, reinterpret_cast<uintptr_t>(cpu));
-                
-        return cpu;
+
+        // Return a new instance to a CPU
+        return get_next_cpu();
     }
     
     void CPU::flush_tlb(const u64 virt) const
     {
         asm volatile("invlpg (%0)" ::"r" (virt) : "memory");
+    }
+
+    void CPU::write_self_to_gs() const
+    {
+        MSR msr(MSR_IA32_GS);
+        msr.write(reinterpret_cast<uintptr_t>(this));
+    }
+
+    void CPU::load_gdt()
+    {
+        x64_load_gdt(reinterpret_cast<uintptr_t>(&m_gdt), KERNEL_CS, KERNEL_DS);
+    }
+    
+    void CPU::load_idt()
+    {
+        //x64_load_idt(reinterpret_cast<uintptr_t>(&m_idt));
     }
 
     void CPU::sse_enable()
@@ -98,9 +114,9 @@ namespace kernel
         Register::write(CR4, Register::read(CR4) | Feature::CR4OSFXSR | Feature::CR4OSXMMEXCPT);
     }
 
-    CPU *CPU::get_next_cpu()
+    CPU& CPU::get_next_cpu()
     {
         assert(m_id < MAX_CPU);
-        return &cpus[m_id++];
+        return cpus[m_id++];
     }
 }
