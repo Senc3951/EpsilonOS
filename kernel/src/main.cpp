@@ -12,6 +12,11 @@ extern void (*__init_array_end[])();
 
 namespace kernel
 {
+    extern "C" void isr_interrupt_handler(void *)
+    {
+        
+    }
+
     using namespace arch;
     using namespace memory;
     

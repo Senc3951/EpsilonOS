@@ -4,7 +4,7 @@ section .text
 global x64_load_gdt
 x64_load_gdt:
     lgdt [rdi]  ; gdt
-
+    
     ; reload code segment
     push rsi    ; cs
     lea rax, [rel .after_reload]
