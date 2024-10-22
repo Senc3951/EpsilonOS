@@ -14,7 +14,7 @@ namespace kernel::memory
     {
         // Allocate memory for the table
         m_phys_pml4 = PhysicalMemoryManager::instance().allocate_frame();
-        if (m_phys_pml4.is_null())
+        if (m_phys_pml4.is_null() || !m_phys_pml4.is_page_aligned())
             panic("failed allocating memory for pml4");
         
         // Reset the table
@@ -108,12 +108,12 @@ namespace kernel::memory
 
     void AddressSpace::map(AddressRange& range, const u64 flags)
     {
-        uintptr_t virt = range.virt_start();
-        uintptr_t phys = range.phys_start();
+        uintptr_t virt = range.virt_start().addr();
+        uintptr_t phys = range.phys_start().addr();
         for (auto offset : range)
         {
-            Address vaddr(virt + offset);
-            Address paddr(phys + offset);
+            Address vaddr(virt + offset.addr());
+            Address paddr(phys + offset.addr());
             
             map(vaddr, paddr, flags);
         }
@@ -139,10 +139,10 @@ namespace kernel::memory
 
     void AddressSpace::unmap(AddressRange& range)
     {
-        uintptr_t virt = range.virt_start();
+        uintptr_t virt = range.virt_start().addr();
         for (auto offset : range)
         {
-            Address vaddr(virt + offset);
+            Address vaddr(virt + offset.addr());
             unmap(vaddr);
         }
     }

@@ -52,12 +52,6 @@ namespace kernel
             m_addr += addr;
             return *this;
         }
-
-        constexpr Address& operator+(const Address& other)
-        {
-            m_addr += other.m_addr;
-            return *this;
-        }
         
         friend constexpr bool operator<(const Address& a1, const Address& a2);
         friend constexpr bool operator>(const Address& a1, const Address& a2);

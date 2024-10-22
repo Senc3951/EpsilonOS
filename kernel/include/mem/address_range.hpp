@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mem/address.hpp>
-#include <log.hpp>
+
 namespace kernel::memory
 {
     class AddressRange
@@ -13,11 +13,11 @@ namespace kernel::memory
         class Iterator
         {
         private:
-            uintptr_t m_current;
+            Address m_current;
         public:
             Iterator(const uintptr_t addr) : m_current(addr) { }
             
-            uintptr_t operator*() const { return m_current; }
+            Address operator*() const { return m_current; }
             
             Iterator& operator++()
             {
@@ -31,11 +31,11 @@ namespace kernel::memory
         Iterator begin() const { return Iterator(0); }
         Iterator end() const { return Iterator(m_size); }
         
-        inline uintptr_t virt_start() const { return m_virt_start; }
-        inline uintptr_t phys_start() const { return m_phys_start; }
+        inline Address virt_start() const { return m_virt_start; }
+        inline Address phys_start() const { return m_phys_start; }
         constexpr u64 size() const { return m_size; }
     private:
-        uintptr_t m_virt_start, m_phys_start;
+        Address m_virt_start, m_phys_start;
         u64 m_size;
     };
 }

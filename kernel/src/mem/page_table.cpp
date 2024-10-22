@@ -22,7 +22,7 @@ namespace kernel::memory
     {
         // Allocate a new page table
         Address table_address = PhysicalMemoryManager::instance().allocate_frame();
-        if (table_address.is_null())
+        if (table_address.is_null() || !table_address.is_page_aligned())
             panic("failed allocating page table for entry at %p", entry);
 
         // Reset the table
