@@ -46,7 +46,7 @@ namespace kernel::memory
                 free_region(entry);
         }
         
-        critical_dmesgln("Physical Memory bitmap at %p (%llu bytes)", m_bitmap.addr(), m_bitmap.bsize());
+        dmesgln("Physical Memory bitmap at %p (%llu bytes)", m_bitmap.addr(), m_bitmap.bsize());
     }
 
     Address PhysicalMemoryManager::allocate_frame()

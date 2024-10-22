@@ -16,19 +16,21 @@ namespace kernel
         static CPU *get_next_cpu();
     public:
         static CPU *init(); /* Returns a new instance of a CPU */
+        static __always_inline__ CPU *current() { return reinterpret_cast<CPU *>(MSR::read(MSR_IA32_GS)); }
         
-        void flush_tlb(const u64 virt) const;
-
-        static void enable_interrupts() { asm volatile("sti" ::: "memory"); }
-        static void disable_interrupts() { asm volatile("cli" ::: "memory"); }
-        static void halt() { asm volatile("hlt" ::: "memory"); }
-        static void pause() { asm volatile("pause" ::: "memory"); }
-        static void __no_return__ hnr() {
+        static __always_inline__ void enable_interrupts() { asm volatile("sti" ::: "memory"); }
+        static __always_inline__ void disable_interrupts() { asm volatile("cli" ::: "memory"); }
+        static __always_inline__ void halt() { asm volatile("hlt" ::: "memory"); }
+        static __always_inline__ void pause() { asm volatile("pause" ::: "memory"); }
+        static __always_inline__ __no_return__ void hnr() {
             disable_interrupts();
             while (true)
                 halt();
         }
         
-        static __always_inline__ CPU *current() { return reinterpret_cast<CPU *>(MSR::read(MSR_IA32_GS)); }
+        void flush_tlb(const u64 virt) const;
+        
+        constexpr u32 get_apicid() const { return m_apicid; }
+        constexpr void set_apicid(const u32 apicid) { m_apicid = apicid; }
     };
 }

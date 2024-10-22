@@ -74,7 +74,7 @@ namespace kernel
             __init_array[i]();
         }
     }
-
+    
     extern "C" __no_sanitize__ __no_return__ void kmain()
     {
         // Verify booted correctly and received all requests
@@ -82,6 +82,8 @@ namespace kernel
         
         // Enable serial output
         dev::UART::init();
+        critical_dmesgln("Kernel loaded using `%s` %s with cmdline `%s`", bootloader_info_request.response->name, bootloader_info_request.response->version,
+            kernel_file_request.response->kernel_file->cmdline);
         
         // Enable cpu features & initialize bsp's cpu struct
         CPU::init();
@@ -95,7 +97,7 @@ namespace kernel
         
         // Initialize constructors after memory has been initialized
         init_ctors();
-
+        
         dmesgln("finished");
         CPU::hnr();
     }
