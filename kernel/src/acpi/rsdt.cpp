@@ -62,7 +62,7 @@ namespace kernel::acpi
             
             // Validate table
             RsdtHeader *table_header = table_header_addr.tohh().as<RsdtHeader *>();
-            if (memcmp(table_header->signature, name, TABLE_NAME_SIZE))
+            if (!memcmp(table_header->signature, name, TABLE_NAME_SIZE))
                 return table_header;
         }
         

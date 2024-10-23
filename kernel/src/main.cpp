@@ -5,6 +5,7 @@
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
+#include <acpi/madt.hpp>
 #include <log.hpp>
 
 // Global constructors
@@ -120,9 +121,14 @@ namespace kernel
         idt_init(current_cpu);
         current_cpu.load_idt();
         
-        /* Prepare to initialize APIC by initializing the RSDT & finding the MADT */
+        /* Prepare to initialize the APIC by finding the RSDT & MADT */
         RSDT::instance().init();
+        MADT::instance().init();
         
+        /* Initialize APIC-related */
+        // Initialize Local APIC
+        // Initialize I/O APIC
+
         dmesgln("finished");
         CPU::hnr();
     }
