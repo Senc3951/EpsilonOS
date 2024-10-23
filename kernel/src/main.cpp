@@ -4,6 +4,7 @@
 #include <arch/idt.hpp>
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
+#include <acpi/rsdt.hpp>
 #include <log.hpp>
 
 // Global constructors
@@ -14,6 +15,7 @@ namespace kernel
 {
     using namespace arch;
     using namespace memory;
+    using namespace acpi;
 
     // Set the base revision to 2, this is recommended as this is the latest
     // base revision described by the Limine boot protocol specification.
@@ -26,6 +28,10 @@ namespace kernel
     };
     __limine_request__ volatile limine_bootloader_info_request bootloader_info_request = {
         .id = LIMINE_BOOTLOADER_INFO_REQUEST,
+        .revision = 0
+    };
+    __limine_request__ volatile limine_rsdp_request rsdp_request = {
+        .id = LIMINE_RSDP_REQUEST,
         .revision = 0
     };
     __limine_request__ volatile limine_memmap_request memmap_request = {
@@ -48,7 +54,7 @@ namespace kernel
         .id = LIMINE_SMP_REQUEST,
         .revision = 0
     };
-
+    
     // Finally, define the start and end markers for the Limine requests.
     // These can also be moved anywhere, to any .c file, as seen fit.
     __attribute__((used, section(".requests_start_marker")))
@@ -63,8 +69,8 @@ namespace kernel
             CPU::hnr();
 
         // Ensure got requests
-        if (!hhdm_request.response || !bootloader_info_request.response || !memmap_request.response ||
-            !kernel_address_request.response || !kernel_file_request.response ||
+        if (!hhdm_request.response || !bootloader_info_request.response || !rsdp_request.response ||
+            !memmap_request.response || !kernel_address_request.response || !kernel_file_request.response ||
             !framebuffer_request.response || !smp_request.response)
             CPU::hnr();
     }
@@ -73,7 +79,7 @@ namespace kernel
     {
         for (size_t i = 0; &__init_array[i] != __init_array_end; i++)
         {
-            dmesgln("Calling ctor at %p", __init_array[i]);
+            dmesgln("Calling constructor at %p", __init_array[i]);
             __init_array[i]();
         }
     }
@@ -113,6 +119,9 @@ namespace kernel
         // Initialize & Load an IDT
         idt_init(current_cpu);
         current_cpu.load_idt();
+        
+        /* Prepare to initialize APIC by initializing the RSDT & finding the MADT */
+        RSDT::instance().init();
         
         dmesgln("finished");
         CPU::hnr();

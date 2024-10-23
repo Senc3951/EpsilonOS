@@ -18,6 +18,13 @@ namespace kernel
             m_addr = (uintptr_t)addr;
         }
         
+        template <typename T>
+        constexpr void set(T addr)
+        {
+            m_addr = (uintptr_t)addr;
+            m_null = false;
+        }
+
         constexpr bool is_page_aligned() const { return (m_addr & (PAGE_SIZE - 1)) == 0; }
         constexpr bool is_null() const { return m_null; }
         
