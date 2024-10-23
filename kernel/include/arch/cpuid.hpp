@@ -12,6 +12,7 @@ namespace kernel
         ECXUMIP     = 1 << 2,
         ECXXSAVE    = 1 << 26,
         ECXAVX      = 1 << 28,
+        EDXAPIC     = 1 << 9,
         EDXPGE      = 1 << 13,
         EDXPAT      = 1 << 16,
         EDXSSE      = 1 << 25

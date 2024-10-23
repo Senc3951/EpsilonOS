@@ -2,6 +2,7 @@
 #include <arch/cpu.hpp>
 #include <arch/gdt.hpp>
 #include <arch/idt.hpp>
+#include <arch/lapic.hpp>
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
@@ -127,6 +128,8 @@ namespace kernel
         
         /* Initialize APIC-related */
         // Initialize Local APIC
+        APIC::init(current_cpu);
+        
         // Initialize I/O APIC
 
         dmesgln("finished");

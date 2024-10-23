@@ -1,4 +1,5 @@
 #include <arch/interrupt.hpp>
+#include <arch/lapic.hpp>
 #include <log.hpp>
 
 namespace kernel::arch
@@ -9,6 +10,11 @@ namespace kernel::arch
         u64 inum = frame->num;
         switch (inum)
         {
+        case ApicSpurious:
+            dmesgln("Spurious interrupt at %llx:%p", frame->cs, frame->rip);
+            APIC::eoi();
+            
+            break;
         default:
             panic("Unhandled interrupt %u", inum);
         }

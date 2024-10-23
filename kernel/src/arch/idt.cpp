@@ -1,4 +1,5 @@
 #include <arch/idt.hpp>
+#include <log.hpp>
 
 namespace kernel::arch
 {
@@ -52,5 +53,7 @@ namespace kernel::arch
         TableDescriptor& idtdesc = const_cast<TableDescriptor&>(cpu.get_idt());
         idtdesc.size = sizeof(entries) - 1;
         idtdesc.base = reinterpret_cast<u64>(entries);
+
+        dmesgln("IDT at %p", &idtdesc);
     }
 }

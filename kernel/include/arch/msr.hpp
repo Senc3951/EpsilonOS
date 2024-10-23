@@ -4,11 +4,12 @@
 
 namespace kernel
 {
+    constexpr u32 MSR_IA32_APIC     = 0x1B;
     constexpr u32 MSR_IA32_PAT      = 0x277;
     constexpr u32 MSR_IA32_FS       = 0xC0000100;
     constexpr u32 MSR_IA32_GS       = 0xC0000101;
     constexpr u32 MSR_IA32_KERNELGS = 0xC0000102;    
-    
+
     class MSR
     {
     private:

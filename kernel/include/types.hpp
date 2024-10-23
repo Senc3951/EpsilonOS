@@ -25,9 +25,3 @@ constexpr u64 round_down(const u64 num, const size_t size)
 {
     return (num & ~(size - 1));
 }
-
-template <typename T>
-constexpr bool is_aligned(const T num, const size_t size)
-{
-    return (bool)((reinterpret_cast<uintptr_t>(num) & (size - 1)) == 0);
-}

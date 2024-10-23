@@ -29,7 +29,8 @@ namespace kernel::arch
         ControlProtection,
         HypervisorInjection = 28,
         VMMCommunication,
-        Security
+        Security,
+        ApicSpurious = 0xFF
     };
     
     struct InterruptFrame

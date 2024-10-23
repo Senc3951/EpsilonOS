@@ -1,4 +1,5 @@
 #include <arch/gdt.hpp>
+#include <log.hpp>
 
 namespace kernel::arch
 {
@@ -53,5 +54,7 @@ namespace kernel::arch
         TableDescriptor& gdtdesc = const_cast<TableDescriptor&>(cpu.get_gdt());
         gdtdesc.size = sizeof(entries) - 1;
         gdtdesc.base = reinterpret_cast<u64>(entries);
+
+        dmesgln("GDT at %p", &gdtdesc);
     }
 }

@@ -44,7 +44,7 @@ namespace kernel::acpi
         assert(madt && "failed finding apic (madt)");
 
         // Get the lapic address and convert it to higher half
-        m_lapic = Address::tohh<u32, uintptr_t>(madt->lapic_address);
+        m_lapic = Address::tohh<uintptr_t, u32>(madt->lapic_address);
         
         LAPICInternal *internal_lapic;
         IOAPICInternal *internal_ioapic;
@@ -59,17 +59,19 @@ namespace kernel::acpi
             switch (record->type)
             {
                 case IO_APIC:
+                    assert(m_ioapic_count < MAX_IOAPIC);
+                    
                     internal_ioapic = reinterpret_cast<IOAPICInternal *>(record + 2);
                     ioapic = &m_ioapic[m_ioapic_count++];
 
                     ioapic->id = internal_ioapic->id;
                     ioapic->gsib = internal_ioapic->gsib;
-                    ioapic->address = Address::tohh<u32, uintptr_t>(internal_ioapic->address);
+                    ioapic->address = Address::tohh<uintptr_t, u32>(internal_ioapic->address);
                     
                     break;
                 case LAPIC_OVERRIDE:
                     internal_lapic = reinterpret_cast<LAPICInternal *>(record + 2);
-                    m_lapic = Address::tohh<u64, uintptr_t>(internal_lapic->address);
+                    m_lapic = Address::tohh<uintptr_t, u64>(internal_lapic->address);
                     
                     break;
             }

@@ -102,7 +102,7 @@ namespace kernel
     {
         x64_load_idt(reinterpret_cast<uintptr_t>(&m_idt));
     }
-    
+
     void CPU::sse_enable()
     {
         // Clear CR0.EM, Set CR0.MP
