@@ -24,6 +24,8 @@ namespace kernel
 
     constexpr size_t PAGE_SIZE = 4096;
     
+    constexpr u32 IRQ0 = 0x20;
+    
     // Limine requests
     extern volatile limine_bootloader_info_request bootloader_info_request;
     extern volatile limine_hhdm_request hhdm_request;

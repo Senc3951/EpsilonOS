@@ -4,10 +4,8 @@
 
 namespace kernel::acpi
 {
-    constexpr u16 MAX_IOAPIC = 16;
-
     struct IOAPIC
-    {
+    {        
         u8 id;
         u32 gsib;
         uintptr_t address;
@@ -16,6 +14,8 @@ namespace kernel::acpi
     class MADT
     {
     private:
+        static constexpr u16 MAX_IOAPIC = 16;
+        
         static MADT m_instance;
         
         uintptr_t m_lapic;

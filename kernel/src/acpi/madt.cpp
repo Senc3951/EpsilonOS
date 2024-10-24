@@ -61,16 +61,16 @@ namespace kernel::acpi
                 case IO_APIC:
                     assert(m_ioapic_count < MAX_IOAPIC);
                     
-                    internal_ioapic = reinterpret_cast<IOAPICInternal *>(record + 2);
+                    internal_ioapic = reinterpret_cast<IOAPICInternal *>(ptr + sizeof(Record));
                     ioapic = &m_ioapic[m_ioapic_count++];
-
+                    
                     ioapic->id = internal_ioapic->id;
                     ioapic->gsib = internal_ioapic->gsib;
                     ioapic->address = Address::tohh<uintptr_t, u32>(internal_ioapic->address);
                     
                     break;
                 case LAPIC_OVERRIDE:
-                    internal_lapic = reinterpret_cast<LAPICInternal *>(record + 2);
+                    internal_lapic = reinterpret_cast<LAPICInternal *>(ptr + sizeof(Record));
                     m_lapic = Address::tohh<uintptr_t, u64>(internal_lapic->address);
                     
                     break;

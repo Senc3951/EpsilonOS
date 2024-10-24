@@ -3,6 +3,7 @@
 #include <arch/gdt.hpp>
 #include <arch/idt.hpp>
 #include <arch/lapic.hpp>
+#include <arch/ioapic.hpp>
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
@@ -131,6 +132,7 @@ namespace kernel
         APIC::init(current_cpu);
         
         // Initialize I/O APIC
+        arch::IOAPIC::init();
 
         dmesgln("finished");
         CPU::hnr();
