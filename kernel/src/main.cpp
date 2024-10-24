@@ -133,7 +133,7 @@ namespace kernel
         
         // Initialize I/O APIC
         arch::IOAPIC::init();
-
+        
         dmesgln("finished");
         CPU::hnr();
     }

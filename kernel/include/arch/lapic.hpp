@@ -44,11 +44,14 @@ namespace kernel::arch
     {
     private:
         static uintptr_t m_lapic;
+        static bool m_enabled;
 
         static bool is_supported();
-        static void software_enable();
+        static void enable();
     public:
         static void init(CPU& cpu);
+
+        static inline bool is_enabled() { return m_enabled; }
         
         static __always_inline__ void eoi() { write(LAPIC_EOI, 0); }
         static __always_inline__ u8 id() { return read(LAPIC_ID) >> 24; }

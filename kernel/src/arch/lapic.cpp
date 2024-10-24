@@ -7,6 +7,7 @@
 namespace kernel::arch
 {
     uintptr_t APIC::m_lapic;
+    bool APIC::m_enabled = false;
     
     void APIC::init(CPU& cpu)
     {
@@ -15,7 +16,7 @@ namespace kernel::arch
         assert(is_supported() && "apic not supported");
 
         // Hardware enale apic
-        software_enable();
+        enable();
         
         // Software enable apic
         write(LAPIC_SVR, ApicSpurious | (1 << 8)); // Lower byte is interrupt number, bit 8 to enable
@@ -46,6 +47,7 @@ namespace kernel::arch
         
         // Set current apicid at the local cpu struct
         cpu.m_apicid = id();
+        m_enabled = true;
     }
     
     bool APIC::is_supported()
@@ -54,7 +56,7 @@ namespace kernel::arch
         return cpuid.edx() & EDXAPIC;
     }
 
-    void APIC::software_enable()
+    void APIC::enable()
     {
         #define IA32_APIC_BASE_MSR_ENABLE   (1 << 11)
         #define IA32_APIC_BASE_MSR          0x1B

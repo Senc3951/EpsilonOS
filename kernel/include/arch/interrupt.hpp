@@ -8,7 +8,7 @@ namespace kernel::arch
     {
         Division = 0,
         Debug,
-        NMI,
+        NonMaskable,
         Breakpoint,
         Overflow,
         BoundRange,
@@ -30,7 +30,8 @@ namespace kernel::arch
         HypervisorInjection = 28,
         VMMCommunication,
         Security,
-        ApicSpurious = 0xFF
+        IPIAbort =  0xFE,
+        ApicSpurious
     };
     
     struct InterruptFrame
