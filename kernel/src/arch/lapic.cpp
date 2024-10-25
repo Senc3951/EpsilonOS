@@ -14,11 +14,9 @@ namespace kernel::arch
         // Check that apic is supported
         m_lapic = acpi::MADT::instance().lapic();
         assert(is_supported() && "apic not supported");
-
-        // Hardware enale apic
-        enable();
         
-        // Software enable apic
+        // Enale apic
+        enable();
         write(LAPIC_SVR, ApicSpurious | (1 << 8)); // Lower byte is interrupt number, bit 8 to enable
         
         // Disable logical interrupt lines

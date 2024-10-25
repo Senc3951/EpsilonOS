@@ -91,15 +91,15 @@ namespace kernel
     
     extern "C" __no_sanitize__ __no_return__ void kmain()
     {
-        // Verify booted correctly and received all requests
+        /* Verify booted correctly and received all requests */
         verify_boot();
         
-        // Enable serial output
+        /* Enable serial output */
         UART::init();
         critical_dmesgln("Kernel loaded using `%s` %s with cmdline `%s`", bootloader_info_request.response->name, bootloader_info_request.response->version,
             kernel_file_request.response->kernel_file->cmdline);
         
-        // Enable cpu features
+        /* Enable cpu features */
         CPU& current_cpu = CPU::init();
         
         /* Initialize memory */
@@ -135,8 +135,8 @@ namespace kernel
         
         // Initialize I/O APIC
         arch::IOAPIC::init();
-
-        // Initialize devices
+        
+        /* Initialize devices */
         HAL::init();
         
         critical_dmesgln("Done");
