@@ -8,6 +8,7 @@
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
 #include <acpi/madt.hpp>
+#include <dev/timer/hpet.hpp>
 #include <log.hpp>
 
 // Global constructors
@@ -16,6 +17,7 @@ extern void (*__init_array_end[])();
 
 namespace kernel
 {
+    using namespace dev;
     using namespace arch;
     using namespace memory;
     using namespace acpi;
@@ -93,7 +95,7 @@ namespace kernel
         verify_boot();
         
         // Enable serial output
-        dev::UART::init();
+        UART::init();
         critical_dmesgln("Kernel loaded using `%s` %s with cmdline `%s`", bootloader_info_request.response->name, bootloader_info_request.response->version,
             kernel_file_request.response->kernel_file->cmdline);
         
@@ -133,8 +135,12 @@ namespace kernel
         
         // Initialize I/O APIC
         arch::IOAPIC::init();
+
+        timer::HPET::instance().init();
+        dmesgln("start");
+        timer::HPET::instance().msleep(3000);
+        dmesgln("end");
         
-        dmesgln("finished");
         CPU::hnr();
     }
 }

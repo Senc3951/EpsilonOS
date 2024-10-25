@@ -41,7 +41,7 @@ namespace kernel::acpi
     void MADT::init()
     {
         MADTInternal *madt = reinterpret_cast<MADTInternal *>(RSDT::instance().find_table(RSDT_APIC_NAME));
-        assert(madt && "failed finding apic (madt)");
+        assert(madt && "madt not found");
 
         // Get the lapic address and convert it to higher half
         m_lapic = Address::tohh<uintptr_t, u32>(madt->lapic_address);
