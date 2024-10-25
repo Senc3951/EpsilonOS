@@ -31,6 +31,7 @@ namespace kernel::arch
         VMMCommunication,
         Security,
         Timer = IRQ0,
+        Keyboard,
         IPIAbort =  0xFE,
         ApicSpurious
     };

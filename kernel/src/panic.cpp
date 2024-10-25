@@ -1,11 +1,21 @@
 #include <lib/printf.hpp>
 #include <arch/cpu.hpp>
 #include <arch/ipi.hpp>
-#include <arch/interrupt.hpp>
+#include <arch/generic_interrupt.hpp>
 #include <dev/uart.hpp>
 
 namespace kernel
 {
+    using namespace arch;
+
+    void AbortIPIHandler::handle(InterruptFrame *)
+    {
+        CPU::disable_interrupts();
+        printf("IPI ABORT FROM %u\n", CPU::current()->m_apicid);
+        
+        CPU::hnr();
+    }
+
     static void write_out(char c, void *)
     {
         dev::UART::write(c);
@@ -17,7 +27,7 @@ namespace kernel
         CPU::disable_interrupts();
 
         // Send an abort to the other cores
-        arch::IPI::send_interrupt(0, arch::IPI_BROADCAST, arch::Interrupt::IPIAbort);
+        IPI::send_interrupt(0, IPI_BROADCAST, IPIAbort);
         
         // Write the header
         char buf[1024];

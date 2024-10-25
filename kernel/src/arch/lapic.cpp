@@ -1,18 +1,33 @@
 #include <arch/lapic.hpp>
 #include <arch/interrupt.hpp>
 #include <arch/cpuid.hpp>
+#include <arch/generic_interrupt.hpp>
+#include <arch/isr.hpp>
 #include <acpi/madt.hpp>
 #include <log.hpp>
 
 namespace kernel::arch
 {
+    void ApicSpuriousInterruptHandler::handle(InterruptFrame *frame)
+    {
+        critical_dmesgln("Spurious interrupt at %llxx%p", frame->cs, frame->rip);
+    }
+
+    void ApicSpuriousInterruptHandler::eoi()
+    {
+        APIC::eoi();
+    }
+
     uintptr_t APIC::m_lapic;
     bool APIC::m_enabled = false;
     
     void APIC::init(CPU& cpu)
     {
+        // Get the apic address (only runs once)
+        if (!m_enabled)
+            m_lapic = acpi::MADT::instance().lapic();
+        
         // Check that apic is supported
-        m_lapic = acpi::MADT::instance().lapic();
         assert(is_supported() && "apic not supported");
         
         // Enale apic
@@ -41,11 +56,18 @@ namespace kernel::arch
         
         // Enable interrupts on the APIC
         write(LAPIC_TPR, 0);
-        critical_dmesgln("LAPICv%u at %p. Running with %u core(s)", static_cast<u8>(read(LAPIC_VER)), m_lapic, smp_request.response->cpu_count);
         
         // Set current apicid at the local cpu struct
         cpu.m_apicid = id();
-        m_enabled = true;
+
+        // Register the spurious interrupt handler (only run once)
+        if (!m_enabled)
+        {
+            m_enabled = true;        
+            InterruptManager::register_interrupt<ApicSpuriousInterruptHandler>(ApicSpurious);
+            
+            critical_dmesgln("LAPICv%u at %p. Running with %u core(s)", static_cast<u8>(read(LAPIC_VER)), m_lapic, smp_request.response->cpu_count);
+        }
     }
     
     bool APIC::is_supported()
@@ -56,9 +78,8 @@ namespace kernel::arch
 
     void APIC::enable()
     {
-        #define IA32_APIC_BASE_MSR_ENABLE   (1 << 11)
-        #define IA32_APIC_BASE_MSR          0x1B
-            
+        constexpr u32 IA32_APIC_BASE_MSR_ENABLE = 1 << 11;
+        
         u32 edx = 0;
         u32 eax = (m_lapic & 0xfffff0000) | IA32_APIC_BASE_MSR_ENABLE;
 
