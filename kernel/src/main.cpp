@@ -107,9 +107,8 @@ namespace kernel
         PhysicalMemoryManager::instance().init();
         
         // Initialize virtual memory manager
-        // Heap will be initialized when calling the first malloc
         kernel_address_space.init_kernel();
-        
+
         // Initialize constructors after memory has been initialized
         init_ctors();
         
@@ -132,7 +131,7 @@ namespace kernel
         /* Initialize APIC-related */
         // Initialize Local APIC
         APIC::init(current_cpu);
-        
+
         // Initialize I/O APIC
         arch::IOAPIC::init();
         

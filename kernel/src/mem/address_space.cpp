@@ -1,7 +1,9 @@
 #include <mem/address_space.hpp>
 #include <mem/pmm.hpp>
+#include <mem/page_fault.hpp>
 #include <arch/register.hpp>
 #include <arch/cpu.hpp>
+#include <arch/isr.hpp>
 #include <log.hpp>
 
 namespace kernel::memory
@@ -75,6 +77,10 @@ namespace kernel::memory
     
         critical_dmesgln("Kernel PML4 at %p", m_phys_pml4.addr());
         load();
+        
+        // Register an interrupt handler for page fault
+        // This will initialize the heap
+        arch::InterruptManager::register_interrupt<PageFaultHandler>(arch::Interrupt::PageFault);
     }
 
     void AddressSpace::load()
@@ -86,7 +92,8 @@ namespace kernel::memory
     
     void AddressSpace::flush_tlb(const Address& virt)
     {
-        CPU::current()->flush_tlb(virt.addr());
+        uintptr_t addr = virt.addr();
+        CPU::current()->flush_tlb(addr);
     }
 
     void AddressSpace::map(const Address& virt, const Address& phys, const u64 unfixed_flags)

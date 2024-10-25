@@ -26,7 +26,7 @@ namespace kernel
     public:
         u32 m_apicid;
 
-        void flush_tlb(const u64 virt) const;
+        void flush_tlb(const uintptr_t virt) const;
         void write_self_to_gs() const;
 
         void load_gdt();

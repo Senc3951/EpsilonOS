@@ -82,7 +82,7 @@ namespace kernel
         return get_next_cpu();
     }
     
-    void CPU::flush_tlb(const u64 virt) const
+    void CPU::flush_tlb(const uintptr_t virt) const
     {
         asm volatile("invlpg (%0)" ::"r" (virt) : "memory");
     }
