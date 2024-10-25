@@ -1,10 +1,10 @@
 #pragma once
 
-#include <arch/generic_interrupt.hpp>
+#include <arch/interrupt_handler.hpp>
 
 namespace kernel::memory
 {
-    class PageFaultHandler : public arch::GenericInterrupt
+    class PageFaultHandler final : public arch::GenericInterruptHandler
     {
     public:
         virtual void handle(arch::InterruptFrame *) override;

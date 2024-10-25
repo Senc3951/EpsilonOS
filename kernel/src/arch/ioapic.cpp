@@ -10,9 +10,9 @@ namespace kernel::arch
     
     void IOAPIC::init()
     {
-        for (u32 i = 0; i < MADT::instance().ioapic_count(); i++)
+        for (u32 i = 0; i < MADT::ioapic_count(); i++)
         {
-            acpi::IOAPIC& ioapic = MADT::instance().ioapic(i);
+            acpi::IOAPIC& ioapic = MADT::ioapic(i);
             
             // Verify ID
             uint8_t id = get_id(ioapic);
@@ -43,9 +43,9 @@ namespace kernel::arch
 
     acpi::IOAPIC *IOAPIC::find_ioapic(const u8 irq)
     {
-        for (u32 i = 0; i < MADT::instance().ioapic_count(); i++)
+        for (u32 i = 0; i < MADT::ioapic_count(); i++)
         {
-            acpi::IOAPIC& ioapic = MADT::instance().ioapic(i);
+            acpi::IOAPIC& ioapic = MADT::ioapic(i);
             if (irq >= ioapic.gsib && irq <= ioapic.gsib + get_max_interrupts(ioapic))
                 return &ioapic;
         }

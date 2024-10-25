@@ -1,23 +1,21 @@
 #include <arch/lapic.hpp>
 #include <arch/interrupt.hpp>
 #include <arch/cpuid.hpp>
-#include <arch/generic_interrupt.hpp>
 #include <arch/isr.hpp>
 #include <acpi/madt.hpp>
 #include <log.hpp>
 
 namespace kernel::arch
 {
-    void ApicSpuriousInterruptHandler::handle(InterruptFrame *frame)
+    class ApicSpuriousInterruptHandler final : public IRQHandler
     {
-        critical_dmesgln("Spurious interrupt at %llxx%p", frame->cs, frame->rip);
-    }
-
-    void ApicSpuriousInterruptHandler::eoi()
-    {
-        APIC::eoi();
-    }
-
+    public:
+        virtual void handle(InterruptFrame *frame) override
+        {
+            critical_dmesgln("Spurious interrupt at %llxx%p", frame->cs, frame->rip);
+        }
+    };
+    
     uintptr_t APIC::m_lapic;
     bool APIC::m_enabled = false;
     
@@ -25,7 +23,7 @@ namespace kernel::arch
     {
         // Get the apic address (only runs once)
         if (!m_enabled)
-            m_lapic = acpi::MADT::instance().lapic();
+            m_lapic = acpi::MADT::lapic();
         
         // Check that apic is supported
         assert(is_supported() && "apic not supported");
@@ -87,6 +85,6 @@ namespace kernel::arch
             edx = (m_lapic >> 32) & 0x0f;
         #endif
         
-        MSR::write(MSR_IA32_APIC, ((u64)edx << 32) | eax);
+        MSR::write(MSR_IA32_APIC, eax, edx);
     }
 }

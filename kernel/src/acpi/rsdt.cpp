@@ -45,23 +45,23 @@ namespace kernel::acpi
             assert(validate_table(&(((Xsdp *)rsdp)->length), sizeof(Xsdp) - sizeof(Rsdp)));
         
         dmesgln("RSDPv%d at %p", m_v1 ? 1 : 2, rsdp);
-
-        Address rsdt_addr(m_v1 ? (uintptr_t)rsdp->rsdt_address : ((Xsdp *)rsdp)->xsdt_address);
-        rsdt_init(rsdt_addr.tohh().as<Rsdt *>());
+        
+        uintptr_t rsdt_address = m_v1 ? (uintptr_t)rsdp->rsdt_address : ((Xsdp *)rsdp)->xsdt_address;
+        rsdt_init(Address::tohh<Rsdt *, uintptr_t>(rsdt_address));
     }
 
     RsdtHeader *RSDT::find_table(const char *name)
     {
         for (size_t i = 0; i < m_table_count; i++)
         {
-            Address table_header_addr;
+            uintptr_t table_header_addr;
             if (m_v1)
-                table_header_addr.set(m_rsdt->tables[i]);
+                table_header_addr = m_rsdt->tables[i];
             else
-                table_header_addr.set(((Xsdt *)m_rsdt)->tables[i]);
+                table_header_addr = ((Xsdt *)m_rsdt)->tables[i];
             
             // Validate table
-            RsdtHeader *table_header = table_header_addr.tohh().as<RsdtHeader *>();
+            RsdtHeader *table_header = Address::tohh<RsdtHeader *, uintptr_t>(table_header_addr);
             if (!memcmp(table_header->signature, name, TABLE_NAME_SIZE))
                 return table_header;
         }
@@ -85,14 +85,14 @@ namespace kernel::acpi
         dmesgln("RSDTv%d at %p with %u tables: ", m_v1 ? 1 : 2, rsdt, m_table_count);
         for (size_t i = 0; i < m_table_count; i++)
         {
-            Address table_header_addr;
+            uintptr_t table_header_addr;
             if (m_v1)
-                table_header_addr.set(rsdt->tables[i]);
+                table_header_addr = rsdt->tables[i];
             else
-                table_header_addr.set(((Xsdt *)rsdt)->tables[i]);
+                table_header_addr = ((Xsdt *)rsdt)->tables[i];
             
             // Validate table
-            RsdtHeader *table_header = table_header_addr.tohh().as<RsdtHeader *>();
+            RsdtHeader *table_header = Address::tohh<RsdtHeader *, uintptr_t>(table_header_addr);
             assert(validate_table(table_header, table_header->length));
                         
             // Print found table            

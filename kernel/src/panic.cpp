@@ -1,7 +1,7 @@
 #include <lib/printf.hpp>
 #include <arch/cpu.hpp>
 #include <arch/ipi.hpp>
-#include <arch/generic_interrupt.hpp>
+#include <arch/interrupt_handler.hpp>
 #include <dev/uart.hpp>
 
 namespace kernel

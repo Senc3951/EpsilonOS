@@ -16,24 +16,14 @@ namespace kernel::acpi
     private:
         static constexpr u16 MAX_IOAPIC = 16;
         
-        static MADT m_instance;
-        
-        uintptr_t m_lapic;
-        u32 m_ioapic_count = 0;
-        IOAPIC m_ioapic[MAX_IOAPIC];
-        
-        MADT() { }
+        static uintptr_t m_lapic;
+        static u32 m_ioapic_count;
+        static IOAPIC m_ioapic[MAX_IOAPIC];
     public:
-        static constexpr MADT& instance() { return m_instance; }
+        static void init();
 
-        void init();
-
-        constexpr uintptr_t lapic() const { return m_lapic; }
-        constexpr u32 ioapic_count() const { return m_ioapic_count; }
-        constexpr IOAPIC& ioapic(const u32 i) const { return const_cast<IOAPIC&>(m_ioapic[i]); }
-        
-        // Delete the copy constructor & assignment operator
-        MADT(const MADT&) = delete;
-        MADT& operator=(const MADT&) = delete;
+        static inline uintptr_t lapic() { return m_lapic; }
+        static inline u32 ioapic_count() { return m_ioapic_count; }
+        static inline IOAPIC& ioapic(const u32 i) { return m_ioapic[i]; }
     };
 }

@@ -18,7 +18,9 @@ namespace kernel
         MSR(const u32 msr) : m_msr(msr) { }
         
         inline u64 read() const { return read(m_msr); }
+        
         inline void write(const u64 value) const { write(m_msr, value); }
+        inline void write(const u32 low, const u32 high) const { write(m_msr, low, high); }
 
         static inline u64 read(const u32 msr)
         {
@@ -31,9 +33,11 @@ namespace kernel
 
         static void write(const u32 msr, const u64 value)
         {
-            u32 low = static_cast<u32>(value);
-            u32 high = static_cast<u32>(value >> 32);
-            
+            write(msr, static_cast<u32>(value), static_cast<u32>(value >> 32));
+        }
+    
+        static void write(const u32 msr, const u32 low, const u32 high)
+        {
             asm volatile("wrmsr" ::"a"(low), "d"(high), "c"(msr));
         }
     };

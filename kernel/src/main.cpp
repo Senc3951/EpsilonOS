@@ -126,7 +126,7 @@ namespace kernel
         
         /* Prepare to initialize the APIC by finding the RSDT & MADT */
         RSDT::instance().init();
-        MADT::instance().init();
+        MADT::init();
         
         /* Initialize APIC-related */
         // Initialize Local APIC

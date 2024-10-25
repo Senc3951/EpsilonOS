@@ -36,8 +36,13 @@ namespace kernel::acpi
         uint32_t flags;
     } __packed__;
 
-    MADT MADT::m_instance;
+    static_assert(sizeof(MADTInternal) == 0x2C);
+    static_assert(sizeof(Record) == 2);
 
+    uintptr_t MADT::m_lapic = 0;
+    u32 MADT::m_ioapic_count = 0;
+    IOAPIC MADT::m_ioapic[MAX_IOAPIC];
+    
     void MADT::init()
     {
         MADTInternal *madt = reinterpret_cast<MADTInternal *>(RSDT::instance().find_table(RSDT_APIC_NAME));

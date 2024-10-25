@@ -56,7 +56,7 @@ namespace kernel::arch
         static __always_inline__ void eoi() { write(LAPIC_EOI, 0); }
         static __always_inline__ u8 id() { return read(LAPIC_ID) >> 24; }
         
-        static __always_inline__ u32 read(const u32 offset) { return *(volatile u32 *)(m_lapic + offset); }
-        static __always_inline__ void write(const u32 offset, const u32 value) { *(volatile u32 *)(m_lapic + offset) = value; }
+        static __always_inline__ u32 read(const u32 offset) { return *reinterpret_cast<volatile u32 *>(m_lapic + offset); }
+        static __always_inline__ void write(const u32 offset, const u32 value) { *reinterpret_cast<volatile u32*>(m_lapic + offset) = value; }
     };
 }
