@@ -9,6 +9,11 @@ namespace kernel::arch
     {
         switch (frame->num)
         {
+        case Timer:
+            dmesgln("tick");
+            APIC::eoi();
+
+            break;
         case IPIAbort:
             dmesgln("Received abort");
             

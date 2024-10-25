@@ -19,15 +19,14 @@ namespace kernel::dev::timer
         m_regs->counter_value = 0;
         m_regs->general_config = 1;
         
-        dmesgln("HPET at %p", m_regs);
+        m_frequency = 1000000000000 / (m_regs->capabilities >> 32);
+        dmesgln("HPET at %p with a frequency of %llx", m_regs, m_frequency);
     }
 
     void HPET::msleep(const u64 ms)
     {
-        u32 period = m_regs->capabilities >> 32;
-        volatile size_t ticks = m_regs->counter_value + (ms * (1000000000000 / period));
-        
+        volatile size_t ticks = m_regs->counter_value + (ms * m_frequency);   
         while (m_regs->counter_value < ticks)
-            asm volatile("pause");
+            __pause();
     }
 }

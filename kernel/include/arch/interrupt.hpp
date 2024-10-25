@@ -30,9 +30,12 @@ namespace kernel::arch
         HypervisorInjection = 28,
         VMMCommunication,
         Security,
+        Timer = IRQ0,
         IPIAbort =  0xFE,
         ApicSpurious
     };
+
+    constexpr u8 toirq(const u8 inum) { return inum - IRQ0; }
     
     struct InterruptFrame
     {

@@ -47,6 +47,8 @@ namespace kernel::dev::timer
         HPET() { }
     public:
         static constexpr HPET& instance() { return m_instance; }
+        
+        u64 m_frequency;
 
         void init();
         void msleep(const u64 ms);

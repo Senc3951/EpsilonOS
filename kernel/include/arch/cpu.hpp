@@ -43,7 +43,6 @@ namespace kernel
         static __always_inline__ void enable_interrupts() { asm volatile("sti" ::: "memory"); }
         static __always_inline__ void disable_interrupts() { asm volatile("cli" ::: "memory"); }
         static __always_inline__ void halt() { asm volatile("hlt" ::: "memory"); }
-        static __always_inline__ void pause() { asm volatile("pause" ::: "memory"); }
         static __always_inline__ __no_return__ void hnr() {
             disable_interrupts();
             while (true)

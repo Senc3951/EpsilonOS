@@ -8,7 +8,7 @@
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
 #include <acpi/madt.hpp>
-#include <dev/timer/hpet.hpp>
+#include <dev/hal.hpp>
 #include <log.hpp>
 
 // Global constructors
@@ -136,11 +136,10 @@ namespace kernel
         // Initialize I/O APIC
         arch::IOAPIC::init();
 
-        timer::HPET::instance().init();
-        dmesgln("start");
-        timer::HPET::instance().msleep(3000);
-        dmesgln("end");
+        // Initialize devices
+        HAL::init();
         
+        critical_dmesgln("Done");
         CPU::hnr();
     }
 }

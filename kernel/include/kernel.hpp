@@ -6,6 +6,9 @@
 
 namespace kernel
 {
+    #define __pause() { asm volatile("pause" ::: "memory"); }
+    #define __barrier() { asm volatile("" ::: "memory"); }
+
     void __no_sanitize__ __no_return__ __never_inline__ __panic(const char *file, const char *function, const char *fmt, ...);
     #define panic(...)                                      \
         do {                                                \
