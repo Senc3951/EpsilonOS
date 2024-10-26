@@ -31,8 +31,11 @@ COLOR_RESET := \033[0m
 .PHONY: build setup distclean clean
 
 build: $(OBJ)
-	@echo "\nBuilding $(OUTPUT_KERNEL)\n"
+	@echo "\nBuilding $(OUTPUT_KERNEL)"
 	@$(LD) $(LFLAGS) $^ -o $(OUTPUT_KERNEL)
+	
+	@echo "Building $(KERNEL_MAP)"
+	@nm -n --demangle $(OUTPUT_KERNEL) | awk '{$$2=""; print $$0}' > $(KERNEL_MAP)
 
 $(OBJ_DIR)/%.c.o: $(SRC_DIR)/%.c
 	$(eval COUNTER := $(shell echo $$(($(COUNTER) + 1))))

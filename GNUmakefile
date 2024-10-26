@@ -12,6 +12,7 @@ build: $(OUTPUT_OS)
 $(OUTPUT_OS): kernel
 	@cp $(OUTPUT_KERNEL) iso/boot
 	@cp $(RESOURCES_DIR)/* iso/boot
+	@cp $(KERNEL_DIR)/$(KERNEL_MAP) iso/boot
 	@cp limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso/boot/limine/
 	@cp limine/BOOTX64.EFI iso/EFI/BOOT/
 	@cp limine/BOOTIA32.EFI iso/EFI/BOOT/

@@ -28,5 +28,6 @@ RESOURCES_DIR	:= resources
 
 LIMINE_CFG		:= limine.conf
 KERNEL_NAME		:= kernel.bin
+KERNEL_MAP		:= kernel.map
 OUTPUT_OS		:= $(OUTPUT_DIR)/$(OSNAME).iso
 OUTPUT_KERNEL	:= $(OUTPUT_DIR)/$(KERNEL_NAME)

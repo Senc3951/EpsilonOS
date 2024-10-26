@@ -1,2 +1,3 @@
 freestnd-c-hdrs/
 obj/
+*.map

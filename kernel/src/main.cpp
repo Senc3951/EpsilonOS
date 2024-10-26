@@ -116,7 +116,7 @@ namespace kernel
         // Initialize & Load an GDT
         gdt_init(current_cpu);
         current_cpu.load_gdt();
-
+        
         // GDT erases the content of the gs msr, so write the cpu struct after loading a gdt
         current_cpu.write_self_to_gs();
                 
