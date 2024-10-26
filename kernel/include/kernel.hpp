@@ -45,11 +45,13 @@ namespace kernel
     extern "C" void *_text_start;
     extern "C" void *_rodata_start;
     extern "C" void *_ctor_start;
+    extern "C" void *_ksyms_start;
     extern "C" void *_data_start;
     extern "C" void *_requests_end;
     extern "C" void *_text_end;
     extern "C" void *_rodata_end;
     extern "C" void *_ctor_end;
+    extern "C" void *_ksyms_end;
     extern "C" void *_data_end;
 }
 

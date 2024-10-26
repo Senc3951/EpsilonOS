@@ -34,8 +34,15 @@ build: $(OBJ)
 	@echo "\nBuilding $(OUTPUT_KERNEL)"
 	@$(LD) $(LFLAGS) $^ -o $(OUTPUT_KERNEL)
 	
-	@echo "Building $(KERNEL_MAP)"
-	@nm -n --demangle $(OUTPUT_KERNEL) | awk '{$$2=""; print $$0}' > $(KERNEL_MAP)
+	@echo "Building $(KERNEL_MAP)\n"
+	@$(eval tmp := $(shell mktemp))
+	@nm -C -n $(OUTPUT_KERNEL) | awk '{$$2=""; print $$0}' > $(tmp)
+	
+	@printf "%08x\n" "$$(wc -l $(tmp) | awk '{print $$1}')" > $(KERNEL_MAP)
+	@cat $(tmp) >> $(KERNEL_MAP)
+	@rm -rf $(tmp)
+	
+	@objcopy --update-section .ksyms=$(KERNEL_MAP) $(OUTPUT_KERNEL)
 
 $(OBJ_DIR)/%.c.o: $(SRC_DIR)/%.c
 	$(eval COUNTER := $(shell echo $$(($(COUNTER) + 1))))

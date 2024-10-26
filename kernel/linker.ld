@@ -11,8 +11,9 @@ PHDRS
 {
     requests PT_LOAD;
     text     PT_LOAD;
-    rodata   PT_LOAD;
     data     PT_LOAD;
+    rodata   PT_LOAD;
+    ksyms    PT_LOAD;
 }
 
 SECTIONS
@@ -22,8 +23,7 @@ SECTIONS
     /* Any address in this region will do, but often 0xffffffff80000000 is chosen as */
     /* that is the beginning of the region. */
     . = 0xffffffff80000000;
-
-
+    
     /* Define a section to contain the Limine requests and assign it to its own PHDR */
     _requests_start = .;
     .requests : {
@@ -32,7 +32,7 @@ SECTIONS
         KEEP(*(.requests_end_marker))
     } :requests
 
-    /* Move to the next memory page for .text */
+    /* Move to the next memory page */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     _requests_end = .;
@@ -42,7 +42,7 @@ SECTIONS
         *(.text .text.*)
     } :text
 
-    /* Move to the next memory page for .rodata */
+    /* Move to the next memory page */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
     
     _text_end = .;
@@ -52,7 +52,7 @@ SECTIONS
         *(.rodata .rodata.*)
     } :rodata
 
-    /* Move to the next memory page for .data */
+    /* Move to the next memory page */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     _rodata_end = .;
@@ -66,7 +66,7 @@ SECTIONS
         __init_array_end = .;
     } :rodata
 
-    /* Move to the next memory page for .data */
+    /* Move to the next memory page */
     . = ALIGN(CONSTANT(MAXPAGESIZE));
 
     _ctor_end = .;
@@ -85,8 +85,20 @@ SECTIONS
         *(COMMON)
     } :data
     
-    _data_end = .;
+    /* Move to the next memory page */
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
     
+    _data_end = .;
+    _ksyms_start = .;
+
+    .ksyms : {
+        KEEP(*(.ksyms))
+    } :ksyms
+    
+    /* Make the kernel end address page-aligned */
+    . = ALIGN(CONSTANT(MAXPAGESIZE));
+    _ksyms_end = .;
+
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {
         *(.eh_frame*)

@@ -40,6 +40,8 @@ namespace kernel::memory
         u64 rodata_end = reinterpret_cast<u64>(&_rodata_end);
         u64 ctor_start = reinterpret_cast<u64>(&_ctor_start);
         u64 ctor_end = reinterpret_cast<u64>(&_ctor_end);
+        u64 ksyms_start = reinterpret_cast<u64>(&_ksyms_start);
+        u64 ksyms_end = reinterpret_cast<u64>(&_ksyms_end);
         u64 data_start = reinterpret_cast<u64>(&_data_start);
         u64 data_end = reinterpret_cast<u64>(&_data_end);
         
@@ -56,10 +58,14 @@ namespace kernel::memory
         AddressRange kernel_rodata_range(rodata_start, kernel_phys_start + rodata_start - kernel_virt_start, rodata_end - rodata_start);
         map(kernel_rodata_range, PagingFlags::ExecuteDisable);
 
-        // Map constructors region as Not Writable & Executable
+        // Map constructors as Not Writable & Executable
         AddressRange kernel_ctor_region(ctor_start, kernel_phys_start + ctor_start - kernel_virt_start, ctor_end - ctor_start);
         map(kernel_ctor_region, 0);
-
+        
+        // Map kernel symbols as Not Writable & Not Executable
+        AddressRange ksyms_region(ksyms_start, kernel_phys_start + ksyms_start - kernel_virt_start, ksyms_end - ksyms_start);
+        map(ksyms_region, PagingFlags::ExecuteDisable);
+        
         // Map data region as Writable & Not Executable
         AddressRange kernel_data_range(data_start, kernel_phys_start + data_start - kernel_virt_start, data_end - data_start);
         map(kernel_data_range, PagingFlags::Writable | PagingFlags::ExecuteDisable);
