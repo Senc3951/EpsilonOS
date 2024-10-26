@@ -1,5 +1,4 @@
 #include <arch/ubsan.hpp>
-#include <log.hpp>
 
 #ifdef __cplusplus
 extern "C" {

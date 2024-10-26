@@ -81,11 +81,6 @@ namespace kernel
         // Return a new instance to a CPU
         return get_next_cpu();
     }
-    
-    void CPU::flush_tlb(const uintptr_t virt) const
-    {
-        asm volatile("invlpg (%0)" ::"r" (virt) : "memory");
-    }
 
     void CPU::write_self_to_gs() const
     {

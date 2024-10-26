@@ -4,7 +4,6 @@
 #include <arch/idt.hpp>
 #include <arch/lapic.hpp>
 #include <arch/ioapic.hpp>
-#include <arch/symtable.hpp>
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
@@ -114,9 +113,6 @@ namespace kernel
         
         // Initialize virtual memory manager
         kernel_address_space.init_kernel();
-
-        /* Load symbols to enable stack-tracing */
-        SymbolTable::load_symbols();
         
         // Initialize constructors after memory has been initialized
         init_ctors();

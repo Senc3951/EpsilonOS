@@ -19,11 +19,11 @@ endif
 
 AFLAGS += -Wall -i$(INC_DIR)
 CFLAGS += -I$(INC_DIR) -Ifreestnd-c-hdrs/$(KARCH)/include -Wall -Wextra \
-	-nostdinc -ffreestanding -fno-stack-protector -fno-stack-check -fno-lto -fno-PIC \
-	-ffunction-sections -fdata-sections -mno-80387 -mno-red-zone -mcmodel=kernel \
+	-nostdinc -ffreestanding -fno-stack-protector -fno-omit-frame-pointer -fno-stack-check \
+	-fno-lto -fno-PIC -ffunction-sections -fdata-sections -mno-80387 -mno-red-zone -mcmodel=kernel \
 	-Wno-address-of-packed-member -Wno-missing-field-initializers -Wno-attributes
 CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions
-LFLAGS += -nostdlib -static -z max-page-size=0x1000 -gc-sections -T $(LINKER_FILE)
+LFLAGS += -nostdlib -static -z max-page-size=0x1000 -gc-sections -z noexecstack -T $(LINKER_FILE)
 
 COLOR_COMPILE := \033[0;36m
 COLOR_RESET := \033[0m
