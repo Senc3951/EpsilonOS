@@ -1,4 +1,5 @@
 #include <arch/ubsan.hpp>
+#include <log.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,7 +95,7 @@ namespace kernel
     void __ubsan_handle_type_mismatch_v1(TypeMismatchData const&, ValueHandle) __attribute__((used));
     void __ubsan_handle_type_mismatch_v1(TypeMismatchData const& data, ValueHandle)
     {
-        //print_location(data.location, "type mismatch");
+        print_location(data.location, "type mismatch");
     }
 
     void __ubsan_handle_alignment_assumption(AlignmentAssumptionData const&, ValueHandle, ValueHandle, ValueHandle) __attribute__((used));

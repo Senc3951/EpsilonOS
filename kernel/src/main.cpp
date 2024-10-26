@@ -4,6 +4,7 @@
 #include <arch/idt.hpp>
 #include <arch/lapic.hpp>
 #include <arch/ioapic.hpp>
+#include <arch/symtable.hpp>
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
@@ -37,6 +38,10 @@ namespace kernel
     };
     __limine_request__ volatile limine_rsdp_request rsdp_request = {
         .id = LIMINE_RSDP_REQUEST,
+        .revision = 0
+    };
+    __limine_request__ volatile limine_module_request module_request = {
+        .id = LIMINE_MODULE_REQUEST,
         .revision = 0
     };
     __limine_request__ volatile limine_memmap_request memmap_request = {
@@ -75,8 +80,8 @@ namespace kernel
 
         // Ensure got requests
         if (!hhdm_request.response || !bootloader_info_request.response || !rsdp_request.response ||
-            !memmap_request.response || !kernel_address_request.response || !kernel_file_request.response ||
-            !framebuffer_request.response || !smp_request.response)
+            !module_request.response || !memmap_request.response || !kernel_address_request.response ||
+            !kernel_file_request.response || !framebuffer_request.response || !smp_request.response)
             CPU::hnr();
     }
 
@@ -101,6 +106,7 @@ namespace kernel
         
         /* Enable cpu features */
         CPU& current_cpu = CPU::init();
+        current_cpu.write_self_to_gs();
         
         /* Initialize memory */
         // Initialize physical memory manager
@@ -109,6 +115,9 @@ namespace kernel
         // Initialize virtual memory manager
         kernel_address_space.init_kernel();
 
+        /* Load symbols to enable stack-tracing */
+        SymbolTable::load_symbols();
+        
         // Initialize constructors after memory has been initialized
         init_ctors();
         
@@ -117,13 +126,13 @@ namespace kernel
         gdt_init(current_cpu);
         current_cpu.load_gdt();
         
-        // GDT erases the content of the gs msr, so write the cpu struct after loading a gdt
+        // GDT erases the content of the gs msr, so write the cpu struct again, after loading a gdt
         current_cpu.write_self_to_gs();
                 
         // Initialize & Load an IDT
         idt_init(current_cpu);
         current_cpu.load_idt();
-        
+
         /* Prepare to initialize the APIC by finding the RSDT & MADT */
         RSDT::instance().init();
         MADT::init();

@@ -92,8 +92,7 @@ namespace kernel::memory
     
     void AddressSpace::flush_tlb(const Address& virt)
     {
-        uintptr_t addr = virt.addr();
-        CPU::current()->flush_tlb(addr);
+        CPU::current()->flush_tlb(virt.addr());
     }
 
     void AddressSpace::map(const Address& virt, const Address& phys, const u64 unfixed_flags)
