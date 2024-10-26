@@ -62,9 +62,9 @@ namespace kernel::memory
         AddressRange kernel_ctor_region(ctor_start, kernel_phys_start + ctor_start - kernel_virt_start, ctor_end - ctor_start);
         map(kernel_ctor_region, 0);
         
-        // Map kernel symbols as Not Writable & Not Executable
+        // Map kernel symbols as Writable & Not Executable
         AddressRange ksyms_region(ksyms_start, kernel_phys_start + ksyms_start - kernel_virt_start, ksyms_end - ksyms_start);
-        map(ksyms_region, PagingFlags::ExecuteDisable);
+        map(ksyms_region, PagingFlags::Writable | PagingFlags::ExecuteDisable);
         
         // Map data region as Writable & Not Executable
         AddressRange kernel_data_range(data_start, kernel_phys_start + data_start - kernel_virt_start, data_end - data_start);

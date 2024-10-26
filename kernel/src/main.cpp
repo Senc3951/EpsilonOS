@@ -4,6 +4,7 @@
 #include <arch/idt.hpp>
 #include <arch/lapic.hpp>
 #include <arch/ioapic.hpp>
+#include <arch/ksyms.hpp>
 #include <mem/pmm.hpp>
 #include <mem/address_space.hpp>
 #include <acpi/rsdt.hpp>
@@ -70,10 +71,6 @@ namespace kernel
     static volatile LIMINE_REQUESTS_START_MARKER;
     __attribute__((used, section(".requests_end_marker")))
     static volatile LIMINE_REQUESTS_END_MARKER;
-    
-    extern "C" {
-        __attribute__((section(".ksyms"))) char kernel_symbols[5 * MiB] {};
-    }
 
     static void verify_boot()
     {
@@ -118,6 +115,9 @@ namespace kernel
         // Initialize virtual memory manager
         kernel_address_space.init_kernel();
 
+        /* Load kernel symbols to allow more informative stack trace */
+        SymbolTable::load();
+        
         // Initialize constructors after memory has been initialized
         init_ctors();
         
