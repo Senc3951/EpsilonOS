@@ -1,8 +1,9 @@
-#include <lib/printf.hpp>
 #include <arch/cpu.hpp>
 #include <arch/ipi.hpp>
+#include <arch/ksyms.hpp>
 #include <arch/interrupt_handler.hpp>
 #include <dev/uart.hpp>
+#include <lib/printf.hpp>
 
 namespace kernel
 {
@@ -15,8 +16,8 @@ namespace kernel
         
         CPU::hnr();
     }
-
-    static void write_out(char c, void *)
+    
+    void panic_write_out(char c, void *)
     {
         dev::UART::write(c);
     }
@@ -28,18 +29,21 @@ namespace kernel
 
         // Send an abort to the other cores
         IPI::send_interrupt(0, IPI_BROADCAST, IPIAbort);
-        
+
         // Write the header
         char buf[1024];
         sprintf(buf, "\033[31m%s:%s: ", file, function);
-        fctprintf(write_out, NULL, "%s", buf);
+        fctprintf(panic_write_out, nullptr, "%s", buf);
         
         // Write the message
         va_list args;
         va_start(args, fmt);
         vsnprintf(buf, sizeof(buf), fmt, args);
-        fctprintf(write_out, NULL, "%s\033[39m\n", buf);
+        fctprintf(panic_write_out, nullptr, "%s\n", buf);
         va_end(args);
+        
+        // Dump stack trace
+        SymbolTable::backtrace();
 
         CPU::hnr();   
     }
